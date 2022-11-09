@@ -31,7 +31,47 @@ locals {
     "privatelink.mariadb.database.azure.com",
     "privatelink.vaultcore.azure.net",
   "private.radix.equinor.com"]
+  azure_dev_subscription = "16ede44b-1f74-40a5-b428-46cca9a5741b"
 }
+
+resource "azurerm_user_assigned_identity" "this" {
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  name = "id-radix-akskubelet-development-northeurope"
+}
+
+
+resource "random_uuid" "customrole" {
+  
+}
+
+resource "azurerm_role_definition" "this" {
+  role_definition_id = random_uuid.customrole.result
+  name               = "CustomKubeletIdentityPermission"
+  scope              = local.azure_dev_subscription
+
+  permissions {
+    actions     = ["Microsoft.ManagedIdentity/userAssignedIdentities/assign/action"]
+    not_actions = []
+  }
+
+  assignable_scopes = [
+    data.azurerm_subscription.dev.subscription_id
+  ]
+}
+
+data "azurerm_subscription" "dev" {
+  subscription_id = local.azure_dev_subscription
+  #id = "16ede44b-1f74-40a5-b428-46cca9a5741b"
+  
+}
+resource "azurerm_role_assignment" "mir" {
+  name               = random_uuid.customrole.result
+  scope              = data.azurerm_subscription.dev.id
+  role_definition_id = azurerm_role_definition.this.role_definition_resource_id
+  principal_id       = azurerm_user_assigned_identity.this.principal_id
+}
+
 
 resource "azurerm_kubernetes_cluster" "this" {
   name                            = var.cluster_name
@@ -59,13 +99,19 @@ resource "azurerm_kubernetes_cluster" "this" {
     max_count           = 5
     max_pods            = 110
     os_disk_size_gb     = 128
-    vnet_subnet_id      = azurerm_subnet.this.id
+    #vnet_subnet_id      = azurerm_virtual_network
   }
 
   identity {
     type         = "UserAssigned"
     identity_ids = [var.managed_identity[0].id]
   }
+
+  kubelet_identity {
+     client_id = azurerm_user_assigned_identity.this.client_id
+     object_id = azurerm_user_assigned_identity.this.principal_id
+     user_assigned_identity_id = azurerm_user_assigned_identity.this.id
+   }
 
   network_profile {
     network_plugin     = "azure"
@@ -79,11 +125,11 @@ resource "azurerm_kubernetes_cluster" "this" {
     secret_rotation_enabled = true
   }
 
-  kubelet_identity {
-    client_id                 = var.managed_identity[0].client_id
-    object_id                 = var.managed_identity[0].id
-    user_assigned_identity_id = var.managed_identity[0].id
-  }
+#   kubelet_identity {
+#     client_id                 = var.managed_identity[0].client_id
+#     object_id                 = var.managed_identity[0].id
+#     user_assigned_identity_id = var.managed_identity[0].id
+#   }
 }
 
 resource "azurerm_role_assignment" "this" {
@@ -150,13 +196,13 @@ resource "azurerm_virtual_network" "this" {
   name                = "vnet-${var.cluster_name}"
   location            = var.location
   resource_group_name = var.resource_group_name
-  address_space       = ["10.0.0.0/16"] # get address_space from vnet-hub
+  address_space       = ["10.9.0.0/16"] # get address_space from vnet-hub
 
-  # subnet {
-  #   name           = "subnet-${var.cluster_name}"
-  #   security_group = azurerm_network_security_group.this.name
-  #   address_prefix = azurerm_subnet.this.address_prefixes
-  # }
+  subnet {
+    name           = "subnet-${var.cluster_name}"
+    security_group = azurerm_network_security_group.this.name
+    address_prefix = "10.9.0.0/18"
+  }
 }
 
 resource "azurerm_virtual_network_peering" "this" {
@@ -176,12 +222,12 @@ resource "azurerm_private_dns_zone_virtual_network_link" "this" {
   registration_enabled  = false
 }
 
-resource "azurerm_subnet" "this" {
-  name                 = "subnet-${var.cluster_name}"
-  resource_group_name  = var.resource_group_name
-  virtual_network_name = azurerm_virtual_network.this.name
-  address_prefixes     = ["10.0.0.0/18"] # get address_space from vnet-hub
-}
+# resource "azurerm_subnet" "this" {
+#   name                 = "subnet-${var.cluster_name}"
+#   resource_group_name  = var.resource_group_name
+#   virtual_network_name = azurerm_virtual_network.this.name
+#   address_prefixes     = ["10.9.0.0/18"] # get address_space from vnet-hub
+# }
 
 resource "azurerm_network_security_group" "this" {
   name                = "nsg-${var.cluster_name}"
@@ -194,7 +240,7 @@ resource "azurerm_network_security_group" "this" {
     direction                  = "Inbound"
     access                     = "Allow"
     protocol                   = "Tcp"
-    destination_port_range     = "80,443"
+    destination_port_ranges     = ["80", "443"]
     destination_address_prefix = ""
     source_port_range          = "*"
     source_address_prefix      = "*"
