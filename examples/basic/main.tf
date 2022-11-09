@@ -45,7 +45,7 @@ module "aks" {
 
   # Manage identity
   kubelet_managed_identity = var.kubelet_managed_identity
-  managed_identity = var.managed_identity
+  managed_identity         = var.managed_identity
 
   tags = local.tags
 }

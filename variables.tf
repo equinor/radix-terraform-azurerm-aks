@@ -13,7 +13,7 @@ variable "kubelet_managed_identity" {
   type = list(object({
     client_id    = string
     id           = string
-    principal_Id = string
+    principal_id = string
   }))
 }
 
@@ -22,7 +22,7 @@ variable "managed_identity" {
   type = list(object({
     client_id    = string
     id           = string
-    principal_Id = string
+    principal_id = string
   }))
 }
 
