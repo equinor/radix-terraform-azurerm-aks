@@ -1,39 +1,49 @@
 variable "cluster_name" {
   description = "Cluster name"
-  type = string
+  type        = string
 }
 
 variable "location" {
   description = "The location to create the resources in."
-  type = string
+  type        = string
+}
+
+variable "kubelet_managed_identity" {
+  description = "Manage identity to assign to cluster"
+  type = list(object({
+    client_id    = string
+    id           = string
+    principal_Id = string
+  }))
 }
 
 variable "managed_identity" {
   description = "Manage identity to assign to cluster"
   type = list(object({
-    client_id = string
-    id        = string
+    client_id    = string
+    id           = string
+    principal_Id = string
   }))
 }
 
 variable "node_pool_name" {
   description = "Node pool name"
-  type = string
+  type        = string
 }
 
 variable "node_pool_vm_size" {
   description = "VM type"
-  type = string
+  type        = string
 }
 
 variable "node_count" {
   description = "Number of nodes"
-  type = number
+  type        = number
 }
 
 variable "resource_group_name" {
   description = "Resource group name"
-  type = string
+  type        = string
 }
 
 variable "tags" {
@@ -43,5 +53,5 @@ variable "tags" {
 
 variable "whitelist_ips" {
   description = "value"
-  type = list(string)
+  type        = list(string)
 }

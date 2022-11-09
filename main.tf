@@ -31,47 +31,43 @@ locals {
     "privatelink.mariadb.database.azure.com",
     "privatelink.vaultcore.azure.net",
   "private.radix.equinor.com"]
-  azure_dev_subscription = "16ede44b-1f74-40a5-b428-46cca9a5741b"
+  # azure_dev_subscription = "16ede44b-1f74-40a5-b428-46cca9a5741b"
 }
 
-resource "azurerm_user_assigned_identity" "this" {
-  resource_group_name = var.resource_group_name
-  location            = var.location
-  name = "id-radix-akskubelet-development-northeurope"
-}
+# resource "azurerm_user_assigned_identity" "this" {
+#   resource_group_name = var.resource_group_name
+#   location            = var.location
+#   name = "id-radix-akskubelet-development-northeurope"
+# }
 
+# resource "random_uuid" "customrole" {}
 
-resource "random_uuid" "customrole" {
-  
-}
+# resource "azurerm_role_definition" "this" {
+#   role_definition_id = random_uuid.customrole.result
+#   name               = "CustomKubeletIdentityPermission"
+#   scope              = local.azure_dev_subscription
 
-resource "azurerm_role_definition" "this" {
-  role_definition_id = random_uuid.customrole.result
-  name               = "CustomKubeletIdentityPermission"
-  scope              = local.azure_dev_subscription
+#   permissions {
+#     actions     = ["Microsoft.ManagedIdentity/userAssignedIdentities/assign/action"]
+#     not_actions = []
+#   }
 
-  permissions {
-    actions     = ["Microsoft.ManagedIdentity/userAssignedIdentities/assign/action"]
-    not_actions = []
-  }
+#   assignable_scopes = [
+#     data.azurerm_subscription.dev.subscription_id
+#   ]
+# }
 
-  assignable_scopes = [
-    data.azurerm_subscription.dev.subscription_id
-  ]
-}
+# data "azurerm_subscription" "dev" {
+#   subscription_id = local.azure_dev_subscription
+#   #id = "16ede44b-1f74-40a5-b428-46cca9a5741b"
 
-data "azurerm_subscription" "dev" {
-  subscription_id = local.azure_dev_subscription
-  #id = "16ede44b-1f74-40a5-b428-46cca9a5741b"
-  
-}
-resource "azurerm_role_assignment" "mir" {
-  name               = random_uuid.customrole.result
-  scope              = data.azurerm_subscription.dev.id
-  role_definition_id = azurerm_role_definition.this.role_definition_resource_id
-  principal_id       = azurerm_user_assigned_identity.this.principal_id
-}
-
+# }
+# resource "azurerm_role_assignment" "mir" {
+#   name               = random_uuid.customrole.result
+#   scope              = data.azurerm_subscription.dev.id
+#   role_definition_id = azurerm_role_definition.this.role_definition_resource_id
+#   principal_id       = azurerm_user_assigned_identity.this.principal_id
+# }
 
 resource "azurerm_kubernetes_cluster" "this" {
   name                            = var.cluster_name
@@ -107,37 +103,54 @@ resource "azurerm_kubernetes_cluster" "this" {
     identity_ids = [var.managed_identity[0].id]
   }
 
-  kubelet_identity {
-     client_id = azurerm_user_assigned_identity.this.client_id
-     object_id = azurerm_user_assigned_identity.this.principal_id
-     user_assigned_identity_id = azurerm_user_assigned_identity.this.id
-   }
-
   network_profile {
     network_plugin     = "azure"
     network_policy     = "calico"
     docker_bridge_cidr = "172.17.0.1/16"
     dns_service_ip     = "10.2.0.10"
-    service_cidr = "10.2.0.0/18" 
+    service_cidr       = "10.2.0.0/18"
   }
 
   key_vault_secrets_provider {
     secret_rotation_enabled = true
   }
 
-#   kubelet_identity {
-#     client_id                 = var.managed_identity[0].client_id
-#     object_id                 = var.managed_identity[0].id
-#     user_assigned_identity_id = var.managed_identity[0].id
-#   }
+  kubelet_identity {
+    client_id                 = var.kubelet_managed_identity[0].client_id
+    object_id                 = var.kubelet_managed_identity[0].id
+    user_assigned_identity_id = var.kubelet_managed_identity[0].id
+  }
+
+  # kubelet_identity {
+  #    client_id = azurerm_user_assigned_identity.this.client_id
+  #    object_id = azurerm_user_assigned_identity.this.principal_id
+  #    user_assigned_identity_id = azurerm_user_assigned_identity.this.id
+  #  }
 }
 
 resource "azurerm_role_assignment" "this" {
-  principal_id                     = azurerm_kubernetes_cluster.this.kubelet_identity[0].object_id
+  principal_id                     = var.kubelet_managed_identity[0].principal_Id
   role_definition_name             = "AcrPull"
   scope                            = data.azurerm_container_registry.this.id
   skip_service_principal_aad_check = true
 }
+
+#│ Error: authorization.RoleAssignmentsClient#Create: Failure responding to request: StatusCode=409 -- Original Error: autorest/azure: Service returned an error. Status=409 Code="RoleAssignmentExists" Message="The role assignment already exists."
+# │ 
+# │   with module.aks.azurerm_role_assignment.this,
+# │   on ../../main.tf line 131, in resource "azurerm_role_assignment" "this":
+# │  131: resource "azurerm_role_assignment" "this" {
+# │ 
+# ╵
+# ╷
+# │ Error: parsing Azure ID: parse "nsg-sondre-dev": invalid URI for request
+# │ 
+# │   with module.aks.azurerm_virtual_network.this,
+# │   on ../../main.tf line 194, in resource "azurerm_virtual_network" "this":
+# │  194: resource "azurerm_virtual_network" "this" {
+
+#89541870-e10a-403c-8d4c-d80e92dd5eb7
+#89541870-e10a-403c-8d4c-d80e92dd5eb7
 
 
 # resource "azurerm_container_registry" "this" {
@@ -240,9 +253,18 @@ resource "azurerm_network_security_group" "this" {
     direction                  = "Inbound"
     access                     = "Allow"
     protocol                   = "Tcp"
-    destination_port_ranges     = ["80", "443"]
-    destination_address_prefix = ""
+    destination_port_ranges    = ["80", "443"]
+    destination_address_prefix = azurerm_public_ip.this.ip_address
     source_port_range          = "*"
     source_address_prefix      = "*"
   }
+}
+
+resource "azurerm_public_ip" "this" {
+  name = "pip-radix-ingress-dev-dev-${var.cluster_name}"
+  resource_group_name = "common"
+  location = var.location
+  allocation_method = "Static"
+  sku = "Standard"
+  sku_tier = "Regional"
 }
