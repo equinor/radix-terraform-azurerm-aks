@@ -1,29 +1,21 @@
-variable "cluster_name" {
-  description = "Cluster name"
-  type        = string
-}
-
-variable "location" {
+variable "AZ_LOCATION" {
   description = "The location to create the resources in."
   type        = string
 }
 
-variable "kubelet_managed_identity" {
-  description = "Manage identity to assign to cluster"
-  type = list(object({
-    client_id    = string
-    id           = string
-    principal_id = string
-  }))
+variable "AZ_RESOURCE_GROUP_CLUSTERS" {
+  description = "Resource group name for clusters"
+  type        = string
 }
 
-variable "managed_identity" {
-  description = "Manage identity to assign to cluster"
-  type = list(object({
-    client_id    = string
-    id           = string
-    principal_id = string
-  }))
+variable "AZ_RESOURCE_GROUP_COMMON" {
+  description = "Resource group name for common"
+  type        = string
+}
+
+variable "cluster_name" {
+  description = "Cluster name"
+  type        = string
 }
 
 variable "node_pool_name" {
@@ -41,17 +33,35 @@ variable "node_count" {
   type        = number
 }
 
-variable "resource_group_name" {
-  description = "Resource group name"
-  type        = string
-}
-
-variable "tags" {
-  description = "A map of tags to assign to the resources."
-  type        = map(string)
-}
-
 variable "whitelist_ips" {
   description = "value"
   type        = list(string)
+}
+
+variable "MI_AKSKUBELET" {
+  description = "Manage identity to assign to cluster"
+  type = list(object({
+    client_id = string
+    id        = string
+    object_id = string
+  }))
+}
+
+variable "MI_AKS" {
+  description = "Manage identity to assign to cluster"
+  type = list(object({
+    client_id = string
+    id        = string
+    object_id = string
+  }))
+}
+
+variable "RADIX_ZONE" {
+  description = "Radix zone"
+  type        = string
+}
+
+variable "RADIX_ENVIRONMENT" {
+  description = "Radix environment"
+  type        = string
 }

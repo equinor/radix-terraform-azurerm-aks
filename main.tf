@@ -1,12 +1,6 @@
-
-data "azurerm_container_registry" "this" {
-  name                = "radixdev"
-  resource_group_name = "common"
-}
-
 data "azurerm_virtual_network" "hub" {
   name                = "vnet-hub"
-  resource_group_name = "cluster-vnet-hub-dev"
+  resource_group_name = local.AZ_RESOURCE_GROUP_VNET_HUB
 }
 
 resource "random_id" "this" {
@@ -14,7 +8,8 @@ resource "random_id" "this" {
 }
 
 locals {
-  AZ_PRIVATE_DNS_ZONES = ["privatelink.database.windows.net",
+  AZ_PRIVATE_DNS_ZONES = [
+    "privatelink.database.windows.net",
     "privatelink.blob.core.windows.net",
     "privatelink.table.core.windows.net",
     "privatelink.queue.core.windows.net",
@@ -30,7 +25,10 @@ locals {
     "privatelink.mysql.database.azure.com",
     "privatelink.mariadb.database.azure.com",
     "privatelink.vaultcore.azure.net",
-  "private.radix.equinor.com"]
+    "private.radix.equinor.com"
+  ]
+  RADIX_WEB_CONSOLE_ENVIRONMENTS = ["qa", "prod"]
+  AZ_RESOURCE_GROUP_VNET_HUB = "cluster-vnet-hub-dev"
 }
 
 resource "azurerm_kubernetes_cluster" "this" {
@@ -39,15 +37,13 @@ resource "azurerm_kubernetes_cluster" "this" {
   ]
 
   name                            = var.cluster_name
-  location                        = var.location
-  resource_group_name             = var.resource_group_name
+  location                        = var.AZ_LOCATION
+  resource_group_name             = var.AZ_RESOURCE_GROUP_CLUSTERS
   dns_prefix                      = "${var.cluster_name}-${random_id.this.hex}"
   kubernetes_version              = "1.23.8"
   local_account_disabled          = true
   sku_tier                        = "Paid"
   api_server_authorized_ip_ranges = length(var.whitelist_ips) != 0 ? var.whitelist_ips : null
-
-  tags = var.tags
 
   azure_active_directory_role_based_access_control {
     managed                = true
@@ -68,7 +64,7 @@ resource "azurerm_kubernetes_cluster" "this" {
 
   identity {
     type         = "UserAssigned"
-    identity_ids = [var.managed_identity[0].id]
+    identity_ids = [var.MI_AKS[0].id]
   }
 
   network_profile {
@@ -84,19 +80,11 @@ resource "azurerm_kubernetes_cluster" "this" {
   }
 
   kubelet_identity {
-    client_id                 = var.kubelet_managed_identity[0].client_id
-    object_id                 = var.kubelet_managed_identity[0].id
-    user_assigned_identity_id = var.kubelet_managed_identity[0].id
+    client_id                 = var.MI_AKSKUBELET[0].client_id
+    object_id                 = var.MI_AKSKUBELET[0].object_id
+    user_assigned_identity_id = var.MI_AKSKUBELET[0].id
   }
 }
-
-# Resource already exist and for safety we don't import it. We take this in use later.
-# resource "azurerm_role_assignment" "this" {
-#   principal_id                     = var.kubelet_managed_identity[0].principal_id
-#   role_definition_name             = "AcrPull"
-#   scope                            = data.azurerm_container_registry.this.id
-#   skip_service_principal_aad_check = true
-# }
 
 resource "azurerm_virtual_network" "this" {
   # Wait on NSG
@@ -105,45 +93,30 @@ resource "azurerm_virtual_network" "this" {
   ]
 
   name                = "vnet-${var.cluster_name}"
-  location            = var.location
-  resource_group_name = var.resource_group_name
+  location            = var.AZ_LOCATION
+  resource_group_name = var.AZ_RESOURCE_GROUP_CLUSTERS
   address_space       = ["10.9.0.0/16"] # get address_space from vnet-hub
-
-  # subnet {
-  #   name           = "subnet-${var.cluster_name}"
-  #   security_group = azurerm_network_security_group.this.name
-  #   address_prefix = "10.9.0.0/18"
-  # }
 }
 
 resource "azurerm_virtual_network_peering" "this" {
   name                         = "hub-to-${var.cluster_name}"
-  resource_group_name          = "cluster-vnet-hub-dev"
+  resource_group_name          = local.AZ_RESOURCE_GROUP_VNET_HUB
   virtual_network_name         = data.azurerm_virtual_network.hub.name
   remote_virtual_network_id    = azurerm_virtual_network.this.id
   allow_virtual_network_access = true
 }
 
-resource "azurerm_private_dns_zone_virtual_network_link" "this" {
-  count                 = length(local.AZ_PRIVATE_DNS_ZONES)
-  name                  = "${var.cluster_name}-link"
-  resource_group_name   = "cluster-vnet-hub-dev"
-  private_dns_zone_name = local.AZ_PRIVATE_DNS_ZONES[count.index]
-  virtual_network_id    = azurerm_virtual_network.this.id
-  registration_enabled  = false
-}
-
 resource "azurerm_subnet" "this" {
   name                 = "subnet-${var.cluster_name}"
-  resource_group_name  = var.resource_group_name
+  resource_group_name  = var.AZ_RESOURCE_GROUP_CLUSTERS
   virtual_network_name = azurerm_virtual_network.this.name
   address_prefixes     = ["10.9.0.0/18"] # get address_space from vnet-hub
 }
 
 resource "azurerm_network_security_group" "this" {
   name                = "nsg-${var.cluster_name}"
-  location            = var.location
-  resource_group_name = var.resource_group_name
+  location            = var.AZ_LOCATION
+  resource_group_name = var.AZ_RESOURCE_GROUP_CLUSTERS
 
   security_rule {
     name                       = "nsg-${var.cluster_name}"
@@ -159,10 +132,49 @@ resource "azurerm_network_security_group" "this" {
 }
 
 resource "azurerm_public_ip" "this" {
-  name                = "pip-radix-ingress-dev-dev-${var.cluster_name}"
-  resource_group_name = "common"
-  location            = var.location
+  name                = "pip-radix-ingress-${var.RADIX_ZONE}-${var.RADIX_ENVIRONMENT}-${var.cluster_name}"
+  resource_group_name = var.AZ_RESOURCE_GROUP_COMMON
+  location            = var.AZ_LOCATION
   allocation_method   = "Static"
   sku                 = "Standard"
   sku_tier            = "Regional"
 }
+
+resource "azurerm_private_dns_zone_virtual_network_link" "this" {
+  count                 = length(local.AZ_PRIVATE_DNS_ZONES)
+  name                  = "${var.cluster_name}-link"
+  resource_group_name   = local.AZ_RESOURCE_GROUP_VNET_HUB
+  private_dns_zone_name = local.AZ_PRIVATE_DNS_ZONES[count.index]
+  virtual_network_id    = azurerm_virtual_network.this.id
+  registration_enabled  = false
+}
+
+resource "azurerm_redis_cache" "this" {
+  count = length(local.RADIX_WEB_CONSOLE_ENVIRONMENTS)
+
+  name                          = "${var.cluster_name}-${local.RADIX_WEB_CONSOLE_ENVIRONMENTS[count.index]}"
+  resource_group_name           = var.AZ_RESOURCE_GROUP_CLUSTERS
+  location                      = var.AZ_LOCATION
+  capacity                      = "1"
+  family                        = "C"
+  sku_name                      = "Basic"
+  public_network_access_enabled = true
+  redis_configuration {
+    maxmemory_reserved              = "125"
+    maxfragmentationmemory_reserved = "125"
+    maxmemory_delta                 = "125"
+  }
+}
+
+# data "azurerm_container_registry" "this" {
+#   name                = "radixdev"
+#   AZ_RESOURCE_GROUP_CLUSTERS = var.AZ_RESOURCE_GROUP_COMMON
+# }
+
+# Resource already exist and for safety we don't import it. We take this in use later.
+# resource "azurerm_role_assignment" "this" {
+#   principal_id                     = var.MI_AKSKUBELET[0].object_id
+#   role_definition_name             = "AcrPull"
+#   scope                            = data.azurerm_container_registry.this.id
+#   skip_service_principal_aad_check = true
+# }
