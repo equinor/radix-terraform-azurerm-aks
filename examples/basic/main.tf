@@ -31,15 +31,21 @@ module "aks" {
   AZ_LOCATION                = var.AZ_LOCATION
   whitelist_ips              = length(local.whitelist_ips.whitelist) != 0 ? [for x in local.whitelist_ips.whitelist : x.ip] : null
 
-  node_pool_name    = var.node_pool_name
-  node_pool_vm_size = var.node_pool_vm_size
-  node_count        = var.node_count
+  # network
+  AZ_PRIVATE_DNS_ZONES = var.AZ_PRIVATE_DNS_ZONES
+
+  # AKS
+  aks_node_pool_name     = var.aks_node_pool_name
+  aks_node_pool_vm_size  = var.aks_node_pool_vm_size
+  aks_node_count         = var.aks_node_count
+  aks_kubernetes_version = var.aks_kubernetes_version
 
   # Manage identity
   MI_AKSKUBELET = var.MI_AKSKUBELET
   MI_AKS        = var.MI_AKS
 
-  # Radix (optional)
+  # Radix
   RADIX_ZONE        = var.RADIX_ZONE
   RADIX_ENVIRONMENT = var.RADIX_ENVIRONMENT
+  RADIX_WEB_CONSOLE_ENVIRONMENTS = var.RADIX_WEB_CONSOLE_ENVIRONMENTS
 }

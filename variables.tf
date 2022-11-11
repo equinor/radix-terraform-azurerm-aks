@@ -13,24 +13,34 @@ variable "AZ_RESOURCE_GROUP_COMMON" {
   type        = string
 }
 
+variable "AZ_PRIVATE_DNS_ZONES" {
+  description = "Private DNS zones to link with VNET"
+  type        = list(string)
+}
+
 variable "cluster_name" {
   description = "Cluster name"
   type        = string
 }
 
-variable "node_pool_name" {
+variable "aks_node_pool_name" {
   description = "Node pool name"
   type        = string
 }
 
-variable "node_pool_vm_size" {
+variable "aks_node_pool_vm_size" {
   description = "VM type"
   type        = string
 }
 
-variable "node_count" {
+variable "aks_node_count" {
   description = "Number of nodes"
   type        = number
+}
+
+variable "aks_kubernetes_version" {
+  description = "kubernetes version"
+  type        = string
 }
 
 variable "whitelist_ips" {
@@ -64,4 +74,9 @@ variable "RADIX_ZONE" {
 variable "RADIX_ENVIRONMENT" {
   description = "Radix environment"
   type        = string
+}
+
+variable "RADIX_WEB_CONSOLE_ENVIRONMENTS" {
+  description = "A list of environments for web console"
+  type        = list(string)
 }

@@ -8,26 +8,6 @@ resource "random_id" "this" {
 }
 
 locals {
-  AZ_PRIVATE_DNS_ZONES = [
-    "privatelink.database.windows.net",
-    "privatelink.blob.core.windows.net",
-    "privatelink.table.core.windows.net",
-    "privatelink.queue.core.windows.net",
-    "privatelink.file.core.windows.net",
-    "privatelink.web.core.windows.net",
-    "privatelink.dfs.core.windows.net",
-    "privatelink.documents.azure.com",
-    "privatelink.mongo.cosmos.azure.com",
-    "privatelink.cassandra.cosmos.azure.com",
-    "privatelink.gremlin.cosmos.azure.com",
-    "privatelink.table.cosmos.azure.com",
-    "privatelink.postgres.database.azure.com",
-    "privatelink.mysql.database.azure.com",
-    "privatelink.mariadb.database.azure.com",
-    "privatelink.vaultcore.azure.net",
-    "private.radix.equinor.com"
-  ]
-  RADIX_WEB_CONSOLE_ENVIRONMENTS = ["qa", "prod"]
   AZ_RESOURCE_GROUP_VNET_HUB = "cluster-vnet-hub-dev"
 }
 
@@ -40,7 +20,7 @@ resource "azurerm_kubernetes_cluster" "this" {
   location                        = var.AZ_LOCATION
   resource_group_name             = var.AZ_RESOURCE_GROUP_CLUSTERS
   dns_prefix                      = "${var.cluster_name}-${random_id.this.hex}"
-  kubernetes_version              = "1.23.8"
+  kubernetes_version              = var.aks_kubernetes_version
   local_account_disabled          = true
   sku_tier                        = "Paid"
   api_server_authorized_ip_ranges = length(var.whitelist_ips) != 0 ? var.whitelist_ips : null
@@ -51,9 +31,9 @@ resource "azurerm_kubernetes_cluster" "this" {
   }
 
   default_node_pool {
-    name                = var.node_pool_name
-    vm_size             = var.node_pool_vm_size
-    node_count          = var.node_count
+    name                = var.aks_node_pool_name
+    vm_size             = var.aks_node_pool_vm_size
+    node_count          = var.aks_node_count
     enable_auto_scaling = true
     min_count           = 2
     max_count           = 5
@@ -141,18 +121,18 @@ resource "azurerm_public_ip" "this" {
 }
 
 resource "azurerm_private_dns_zone_virtual_network_link" "this" {
-  count                 = length(local.AZ_PRIVATE_DNS_ZONES)
+  count                 = length(var.AZ_PRIVATE_DNS_ZONES)
   name                  = "${var.cluster_name}-link"
   resource_group_name   = local.AZ_RESOURCE_GROUP_VNET_HUB
-  private_dns_zone_name = local.AZ_PRIVATE_DNS_ZONES[count.index]
+  private_dns_zone_name = var.AZ_PRIVATE_DNS_ZONES[count.index]
   virtual_network_id    = azurerm_virtual_network.this.id
   registration_enabled  = false
 }
 
 resource "azurerm_redis_cache" "this" {
-  count = length(local.RADIX_WEB_CONSOLE_ENVIRONMENTS)
+  count = length(var.RADIX_WEB_CONSOLE_ENVIRONMENTS)
 
-  name                          = "${var.cluster_name}-${local.RADIX_WEB_CONSOLE_ENVIRONMENTS[count.index]}"
+  name                          = "${var.cluster_name}-${var.RADIX_WEB_CONSOLE_ENVIRONMENTS[count.index]}"
   resource_group_name           = var.AZ_RESOURCE_GROUP_CLUSTERS
   location                      = var.AZ_LOCATION
   capacity                      = "1"
