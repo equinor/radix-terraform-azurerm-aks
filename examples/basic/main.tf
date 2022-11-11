@@ -14,6 +14,7 @@ data "azurerm_key_vault_secret" "this" {
 
 locals {
   whitelist_ips = jsondecode(textdecodebase64("${data.azurerm_key_vault_secret.this.value}", "UTF-8"))
+  AZ_RESOURCE_GROUP_VNET_HUB = "cluster-vnet-hub-${var.RADIX_ZONE}"
 }
 
 resource "azurerm_resource_group" "this" {
@@ -25,14 +26,17 @@ module "aks" {
   # source = "github.com/equinor/radix-terraform-azurerm-aks"
   source = "../.."
 
-  cluster_name               = var.cluster_name
+  cluster_name = var.cluster_name
+  AZ_LOCATION  = var.AZ_LOCATION
+
+  # Resource groups
   AZ_RESOURCE_GROUP_CLUSTERS = azurerm_resource_group.this.name
   AZ_RESOURCE_GROUP_COMMON   = var.AZ_RESOURCE_GROUP_COMMON
-  AZ_LOCATION                = var.AZ_LOCATION
-  whitelist_ips              = length(local.whitelist_ips.whitelist) != 0 ? [for x in local.whitelist_ips.whitelist : x.ip] : null
+  AZ_RESOURCE_GROUP_VNET_HUB = local.AZ_RESOURCE_GROUP_VNET_HUB
 
   # network
   AZ_PRIVATE_DNS_ZONES = var.AZ_PRIVATE_DNS_ZONES
+  whitelist_ips        = length(local.whitelist_ips.whitelist) != 0 ? [for x in local.whitelist_ips.whitelist : x.ip] : null
 
   # AKS
   aks_node_pool_name     = var.aks_node_pool_name
@@ -45,7 +49,7 @@ module "aks" {
   MI_AKS        = var.MI_AKS
 
   # Radix
-  RADIX_ZONE        = var.RADIX_ZONE
-  RADIX_ENVIRONMENT = var.RADIX_ENVIRONMENT
+  RADIX_ZONE                     = var.RADIX_ZONE
+  RADIX_ENVIRONMENT              = var.RADIX_ENVIRONMENT
   RADIX_WEB_CONSOLE_ENVIRONMENTS = var.RADIX_WEB_CONSOLE_ENVIRONMENTS
 }

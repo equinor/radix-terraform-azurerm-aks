@@ -1,14 +1,10 @@
 data "azurerm_virtual_network" "hub" {
   name                = "vnet-hub"
-  resource_group_name = local.AZ_RESOURCE_GROUP_VNET_HUB
+  resource_group_name = var.AZ_RESOURCE_GROUP_VNET_HUB
 }
 
 resource "random_id" "this" {
   byte_length = 4
-}
-
-locals {
-  AZ_RESOURCE_GROUP_VNET_HUB = "cluster-vnet-hub-dev"
 }
 
 resource "azurerm_kubernetes_cluster" "this" {
@@ -33,7 +29,7 @@ resource "azurerm_kubernetes_cluster" "this" {
   default_node_pool {
     name                = var.aks_node_pool_name
     vm_size             = var.aks_node_pool_vm_size
-    node_count          = var.aks_node_count
+    # node_count          = var.aks_node_count
     enable_auto_scaling = true
     min_count           = 2
     max_count           = 5
@@ -78,9 +74,17 @@ resource "azurerm_virtual_network" "this" {
   address_space       = ["10.9.0.0/16"] # get address_space from vnet-hub
 }
 
-resource "azurerm_virtual_network_peering" "this" {
+resource "azurerm_virtual_network_peering" "cluster_to_hub" {
+  name                         = "cluster-to-hub"
+  resource_group_name          = var.AZ_RESOURCE_GROUP_CLUSTERS
+  virtual_network_name         = azurerm_virtual_network.this.name
+  remote_virtual_network_id    = data.azurerm_virtual_network.hub.id
+  allow_virtual_network_access = true
+}
+
+resource "azurerm_virtual_network_peering" "hub_to_cluster" {
   name                         = "hub-to-${var.cluster_name}"
-  resource_group_name          = local.AZ_RESOURCE_GROUP_VNET_HUB
+  resource_group_name          = var.AZ_RESOURCE_GROUP_VNET_HUB
   virtual_network_name         = data.azurerm_virtual_network.hub.name
   remote_virtual_network_id    = azurerm_virtual_network.this.id
   allow_virtual_network_access = true
@@ -123,7 +127,7 @@ resource "azurerm_public_ip" "this" {
 resource "azurerm_private_dns_zone_virtual_network_link" "this" {
   count                 = length(var.AZ_PRIVATE_DNS_ZONES)
   name                  = "${var.cluster_name}-link"
-  resource_group_name   = local.AZ_RESOURCE_GROUP_VNET_HUB
+  resource_group_name   = var.AZ_RESOURCE_GROUP_VNET_HUB
   private_dns_zone_name = var.AZ_PRIVATE_DNS_ZONES[count.index]
   virtual_network_id    = azurerm_virtual_network.this.id
   registration_enabled  = false

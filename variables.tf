@@ -13,6 +13,11 @@ variable "AZ_RESOURCE_GROUP_COMMON" {
   type        = string
 }
 
+variable "AZ_RESOURCE_GROUP_VNET_HUB" {
+  description = "Resource group name for vnet hub"
+  type        = string
+}
+
 variable "AZ_PRIVATE_DNS_ZONES" {
   description = "Private DNS zones to link with VNET"
   type        = list(string)
