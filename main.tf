@@ -3,6 +3,13 @@ data "azurerm_virtual_network" "hub" {
   resource_group_name = var.AZ_RESOURCE_GROUP_VNET_HUB
 }
 
+locals {
+  # get list of available addresses
+  available_addresses_starte_range = 3
+  available_addresses_end_range = 255
+  available_addresses_index = [for i, el in range(local.available_addresses_starte_range,local.available_addresses_end_range) : "${i+local.available_addresses_starte_range}" if (contains(data.azurerm_virtual_network.hub.vnet_peerings_addresses, "10.${i+local.available_addresses_starte_range}.0.0/16") == false)]
+}
+
 resource "random_id" "this" {
   byte_length = 4
 }
@@ -71,7 +78,7 @@ resource "azurerm_virtual_network" "this" {
   name                = "vnet-${var.cluster_name}"
   location            = var.AZ_LOCATION
   resource_group_name = var.AZ_RESOURCE_GROUP_CLUSTERS
-  address_space       = ["10.9.0.0/16"] # get address_space from vnet-hub
+  address_space       = ["10.${available_addresses_index}.0.0/16"] # get address_space from vnet-hub
 }
 
 resource "azurerm_virtual_network_peering" "cluster_to_hub" {
@@ -94,7 +101,7 @@ resource "azurerm_subnet" "this" {
   name                 = "subnet-${var.cluster_name}"
   resource_group_name  = var.AZ_RESOURCE_GROUP_CLUSTERS
   virtual_network_name = azurerm_virtual_network.this.name
-  address_prefixes     = ["10.9.0.0/18"] # get address_space from vnet-hub
+  address_prefixes     = ["10.${available_addresses_index}.0.0/18"] # get address_space from vnet-hub
 }
 
 resource "azurerm_network_security_group" "this" {
