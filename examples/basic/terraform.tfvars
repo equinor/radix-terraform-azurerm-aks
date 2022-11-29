@@ -1,20 +1,20 @@
-cluster_name  = "radix-azurerm-aks-example"
+# cluster_name  = ""
 # whitelist_ips = [] # This will be set in main.tf
 
 #######################################################################################
 ### AKS
 ###
 
-aks_node_pool_name     = "nodepool1"
-aks_node_pool_vm_size  = "Standard_B4ms"
-aks_node_count         = 3
-aks_kubernetes_version = "1.23.8"
+# aks_node_pool_name     = ""
+# aks_node_pool_vm_size  = ""
+# aks_node_count         = 
+# aks_kubernetes_version = ""
 
 #######################################################################################
 ### Zone and cluster settings
 ###
 
-AZ_LOCATION       = "northeurope"
+# AZ_LOCATION       = ""
 # RADIX_ZONE        = ""
 # RADIX_ENVIRONMENT = ""
 # RADIX_WEB_CONSOLE_ENVIRONMENTS = []
@@ -23,7 +23,7 @@ AZ_LOCATION       = "northeurope"
 ### Resource groups
 ###
 
-AZ_RESOURCE_GROUP_CLUSTERS = "radix-azurerm-aks-example" # original "clusters"
+# AZ_RESOURCE_GROUP_CLUSTERS = ""
 # AZ_RESOURCE_GROUP_COMMON   = ""
 
 #######################################################################################
