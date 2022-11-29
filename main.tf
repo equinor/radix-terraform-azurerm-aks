@@ -1,28 +1,29 @@
+locals {
+  # get list of available addresses
+  available_addresses_starte_range = 3
+  available_addresses_end_range = 255
+  available_addresses_index_list = [for i, el in range(local.available_addresses_starte_range,local.available_addresses_end_range) : "${i+local.available_addresses_starte_range}" if (contains(data.azurerm_virtual_network.hub.vnet_peerings_addresses, "10.${i+local.available_addresses_starte_range}.0.0/16") == false)]
+  available_address = local.available_addresses_index_list[0]
+}
+
 data "azurerm_virtual_network" "hub" {
   name                = "vnet-hub"
   resource_group_name = var.AZ_RESOURCE_GROUP_VNET_HUB
 }
 
-locals {
-  # get list of available addresses
-  available_addresses_starte_range = 3
-  available_addresses_end_range = 255
-  available_addresses_index = [for i, el in range(local.available_addresses_starte_range,local.available_addresses_end_range) : "${i+local.available_addresses_starte_range}" if (contains(data.azurerm_virtual_network.hub.vnet_peerings_addresses, "10.${i+local.available_addresses_starte_range}.0.0/16") == false)]
-}
-
-resource "random_id" "this" {
+resource "random_id" "four_byte" {
   byte_length = 4
 }
 
-resource "azurerm_kubernetes_cluster" "this" {
+resource "azurerm_kubernetes_cluster" "kubernetes_cluster" {
   depends_on = [
-    azurerm_virtual_network.this
+    azurerm_virtual_network.vnet_cluster
   ]
 
   name                            = var.cluster_name
   location                        = var.AZ_LOCATION
   resource_group_name             = var.AZ_RESOURCE_GROUP_CLUSTERS
-  dns_prefix                      = "${var.cluster_name}-${random_id.this.hex}"
+  dns_prefix                      = "${var.cluster_name}-${random_id.four_byte.hex}"
   kubernetes_version              = var.aks_kubernetes_version
   local_account_disabled          = true
   sku_tier                        = "Paid"
@@ -42,7 +43,7 @@ resource "azurerm_kubernetes_cluster" "this" {
     max_count           = 5
     max_pods            = 110
     os_disk_size_gb     = 128
-    vnet_subnet_id      = azurerm_subnet.this.id
+    vnet_subnet_id      = azurerm_subnet.subnet_cluster.id
   }
 
   identity {
@@ -69,22 +70,22 @@ resource "azurerm_kubernetes_cluster" "this" {
   }
 }
 
-resource "azurerm_virtual_network" "this" {
+resource "azurerm_virtual_network" "vnet_cluster" {
   # Wait on NSG
   depends_on = [
-    azurerm_network_security_group.this
+    azurerm_network_security_group.nsg_cluster
   ]
 
   name                = "vnet-${var.cluster_name}"
   location            = var.AZ_LOCATION
   resource_group_name = var.AZ_RESOURCE_GROUP_CLUSTERS
-  address_space       = ["10.${available_addresses_index}.0.0/16"] # get address_space from vnet-hub
+  address_space       = ["10.${local.available_address}.0.0/16"] # get address_space from vnet-hub
 }
 
 resource "azurerm_virtual_network_peering" "cluster_to_hub" {
   name                         = "cluster-to-hub"
   resource_group_name          = var.AZ_RESOURCE_GROUP_CLUSTERS
-  virtual_network_name         = azurerm_virtual_network.this.name
+  virtual_network_name         = azurerm_virtual_network.vnet_cluster.name
   remote_virtual_network_id    = data.azurerm_virtual_network.hub.id
   allow_virtual_network_access = true
 }
@@ -93,18 +94,18 @@ resource "azurerm_virtual_network_peering" "hub_to_cluster" {
   name                         = "hub-to-${var.cluster_name}"
   resource_group_name          = var.AZ_RESOURCE_GROUP_VNET_HUB
   virtual_network_name         = data.azurerm_virtual_network.hub.name
-  remote_virtual_network_id    = azurerm_virtual_network.this.id
+  remote_virtual_network_id    = azurerm_virtual_network.vnet_cluster.id
   allow_virtual_network_access = true
 }
 
-resource "azurerm_subnet" "this" {
+resource "azurerm_subnet" "subnet_cluster" {
   name                 = "subnet-${var.cluster_name}"
   resource_group_name  = var.AZ_RESOURCE_GROUP_CLUSTERS
-  virtual_network_name = azurerm_virtual_network.this.name
-  address_prefixes     = ["10.${available_addresses_index}.0.0/18"] # get address_space from vnet-hub
+  virtual_network_name = azurerm_virtual_network.vnet_cluster.name
+  address_prefixes     = ["10.${local.available_address}.0.0/18"] # get address_space from vnet-hub
 }
 
-resource "azurerm_network_security_group" "this" {
+resource "azurerm_network_security_group" "nsg_cluster" {
   name                = "nsg-${var.cluster_name}"
   location            = var.AZ_LOCATION
   resource_group_name = var.AZ_RESOURCE_GROUP_CLUSTERS
@@ -116,13 +117,13 @@ resource "azurerm_network_security_group" "this" {
     access                     = "Allow"
     protocol                   = "Tcp"
     destination_port_ranges    = ["80", "443"]
-    destination_address_prefix = azurerm_public_ip.this.ip_address
+    destination_address_prefix = azurerm_public_ip.pip_ingress.ip_address
     source_port_range          = "*"
     source_address_prefix      = "*"
   }
 }
 
-resource "azurerm_public_ip" "this" {
+resource "azurerm_public_ip" "pip_ingress" {
   name                = "pip-radix-ingress-${var.RADIX_ZONE}-${var.RADIX_ENVIRONMENT}-${var.cluster_name}"
   resource_group_name = var.AZ_RESOURCE_GROUP_COMMON
   location            = var.AZ_LOCATION
@@ -131,31 +132,6 @@ resource "azurerm_public_ip" "this" {
   sku_tier            = "Regional"
 }
 
-resource "azurerm_private_dns_zone_virtual_network_link" "this" {
-  count                 = length(var.AZ_PRIVATE_DNS_ZONES)
-  name                  = "${var.cluster_name}-link"
-  resource_group_name   = var.AZ_RESOURCE_GROUP_VNET_HUB
-  private_dns_zone_name = var.AZ_PRIVATE_DNS_ZONES[count.index]
-  virtual_network_id    = azurerm_virtual_network.this.id
-  registration_enabled  = false
-}
-
-resource "azurerm_redis_cache" "this" {
-  count = length(var.RADIX_WEB_CONSOLE_ENVIRONMENTS)
-
-  name                          = "${var.cluster_name}-${var.RADIX_WEB_CONSOLE_ENVIRONMENTS[count.index]}"
-  resource_group_name           = var.AZ_RESOURCE_GROUP_CLUSTERS
-  location                      = var.AZ_LOCATION
-  capacity                      = "1"
-  family                        = "C"
-  sku_name                      = "Basic"
-  public_network_access_enabled = true
-  redis_configuration {
-    maxmemory_reserved              = "125"
-    maxfragmentationmemory_reserved = "125"
-    maxmemory_delta                 = "125"
-  }
-}
 
 # data "azurerm_container_registry" "this" {
 #   name                = "radixdev"

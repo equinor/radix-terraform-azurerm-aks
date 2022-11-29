@@ -17,12 +17,6 @@ variable "AZ_RESOURCE_GROUP_VNET_HUB" {
   description = "Resource group name for vnet hub"
   type        = string
 }
-
-variable "AZ_PRIVATE_DNS_ZONES" {
-  description = "Private DNS zones to link with VNET"
-  type        = list(string)
-}
-
 variable "cluster_name" {
   description = "Cluster name"
   type        = string
@@ -79,9 +73,4 @@ variable "RADIX_ZONE" {
 variable "RADIX_ENVIRONMENT" {
   description = "Radix environment"
   type        = string
-}
-
-variable "RADIX_WEB_CONSOLE_ENVIRONMENTS" {
-  description = "A list of environments for web console"
-  type        = list(string)
 }
