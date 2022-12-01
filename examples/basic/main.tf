@@ -17,7 +17,7 @@ data "azurerm_key_vault_secret" "whitelist_ips" {
   key_vault_id = data.azurerm_key_vault.keyvault_env.id
 }
 
-resource "azurerm_resource_group" "clusters" {
+resource "azurerm_resource_group" "rg_clusters" {
   name     = var.AZ_RESOURCE_GROUP_CLUSTERS
   location = var.AZ_LOCATION
 }
@@ -30,7 +30,7 @@ module "aks" {
   AZ_LOCATION  = var.AZ_LOCATION
 
   # Resource groups
-  AZ_RESOURCE_GROUP_CLUSTERS = azurerm_resource_group.clusters.name
+  AZ_RESOURCE_GROUP_CLUSTERS = azurerm_resource_group.rg_clusters.name
   AZ_RESOURCE_GROUP_COMMON   = var.AZ_RESOURCE_GROUP_COMMON
   AZ_RESOURCE_GROUP_VNET_HUB = local.AZ_RESOURCE_GROUP_VNET_HUB
 
