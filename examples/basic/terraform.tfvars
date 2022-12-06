@@ -1,14 +1,14 @@
-# cluster_name  = ""
-# whitelist_ips = [] # This will be set in main.tf
+# CLUSTER_NAME  = ""
+# WHITELIST_IPS = [] # This will be set in main.tf
 
 #######################################################################################
 ### AKS
 ###
 
-# aks_node_pool_name     = ""
-# aks_node_pool_vm_size  = ""
-# aks_node_count         = 
-# aks_kubernetes_version = ""
+# AKS_NODE_POOL_NAME     = ""
+# AKS_NODE_POOL_VM_SIZE  = ""
+# AKS_NODE_COUNT         = 
+# AKS_KUBERNETES_VERSION = ""
 
 #######################################################################################
 ### Zone and cluster settings
