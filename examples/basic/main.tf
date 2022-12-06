@@ -3,7 +3,7 @@ provider "azurerm" {
 }
 
 locals {
-  whitelist_ips = jsondecode(textdecodebase64("${data.azurerm_key_vault_secret.whitelist_ips.value}", "UTF-8"))
+  WHITELIST_IPS = jsondecode(textdecodebase64("${data.azurerm_key_vault_secret.WHITELIST_IPS.value}", "UTF-8"))
   AZ_RESOURCE_GROUP_VNET_HUB = "cluster-vnet-hub-${var.RADIX_ZONE}"
 }
 
@@ -12,7 +12,7 @@ data "azurerm_key_vault" "keyvault_env" {
   resource_group_name = var.AZ_RESOURCE_GROUP_COMMON
 }
 
-data "azurerm_key_vault_secret" "whitelist_ips" {
+data "azurerm_key_vault_secret" "WHITELIST_IPS" {
   name         = "kubernetes-api-server-whitelist-ips-dev"
   key_vault_id = data.azurerm_key_vault.keyvault_env.id
 }
@@ -26,7 +26,7 @@ module "aks" {
   # source = "github.com/equinor/radix-terraform-azurerm-aks"
   source = "../.."
 
-  cluster_name = var.cluster_name
+  CLUSTER_NAME = var.CLUSTER_NAME
   AZ_LOCATION  = var.AZ_LOCATION
 
   # Resource groups
@@ -36,13 +36,13 @@ module "aks" {
 
   # network
   # AZ_PRIVATE_DNS_ZONES = var.AZ_PRIVATE_DNS_ZONES
-  whitelist_ips        = length(local.whitelist_ips.whitelist) != 0 ? [for x in local.whitelist_ips.whitelist : x.ip] : null
+  WHITELIST_IPS        = length(local.WHITELIST_IPS.whitelist) != 0 ? [for x in local.WHITELIST_IPS.whitelist : x.ip] : null
 
   # AKS
-  aks_node_pool_name     = var.aks_node_pool_name
-  aks_node_pool_vm_size  = var.aks_node_pool_vm_size
-  aks_node_count         = var.aks_node_count
-  aks_kubernetes_version = var.aks_kubernetes_version
+  AKS_NODE_POOL_NAME     = var.AKS_NODE_POOL_NAME
+  AKS_NODE_POOL_VM_SIZE  = var.AKS_NODE_POOL_VM_SIZE
+  AKS_NODE_COUNT         = var.AKS_NODE_COUNT
+  AKS_KUBERNETES_VERSION = var.AKS_KUBERNETES_VERSION
 
   # Manage identity
   MI_AKSKUBELET = var.MI_AKSKUBELET
@@ -56,7 +56,7 @@ module "aks" {
 resource "azurerm_redis_cache" "redis_cache_web_console" {
   count = length(var.RADIX_WEB_CONSOLE_ENVIRONMENTS)
 
-  name                          = "${var.cluster_name}-${var.RADIX_WEB_CONSOLE_ENVIRONMENTS[count.index]}"
+  name                          = "${var.CLUSTER_NAME}-${var.RADIX_WEB_CONSOLE_ENVIRONMENTS[count.index]}"
   resource_group_name           = var.AZ_RESOURCE_GROUP_CLUSTERS
   location                      = var.AZ_LOCATION
   capacity                      = "1"
@@ -72,7 +72,7 @@ resource "azurerm_redis_cache" "redis_cache_web_console" {
 
 resource "azurerm_private_dns_zone_virtual_network_link" "cluster_link" {
   count                 = length(var.AZ_PRIVATE_DNS_ZONES)
-  name                  = "${var.cluster_name}-link"
+  name                  = "${var.CLUSTER_NAME}-link"
   resource_group_name   = local.AZ_RESOURCE_GROUP_VNET_HUB
   private_dns_zone_name = var.AZ_PRIVATE_DNS_ZONES[count.index]
   virtual_network_id    = module.aks.vnet_cluster.id

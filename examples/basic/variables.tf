@@ -18,32 +18,32 @@ variable "AZ_PRIVATE_DNS_ZONES" {
   type        = list(string)
 }
 
-variable "cluster_name" {
+variable "CLUSTER_NAME" {
   description = "Cluster name"
   type        = string
 }
 
-variable "aks_node_pool_name" {
+variable "AKS_NODE_POOL_NAME" {
   description = "Node pool name"
   type        = string
 }
 
-variable "aks_node_pool_vm_size" {
+variable "AKS_NODE_POOL_VM_SIZE" {
   description = "VM type"
   type        = string
 }
 
-variable "aks_node_count" {
+variable "AKS_NODE_COUNT" {
   description = "Number of nodes"
   type        = number
 }
 
-variable "aks_kubernetes_version" {
+variable "AKS_KUBERNETES_VERSION" {
   description = "kubernetes version"
   type        = string
 }
 
-variable "whitelist_ips" {
+variable "WHITELIST_IPS" {
   description = "List ipadresses that should be able to access the cluster"
   type        = list(string)
 }
