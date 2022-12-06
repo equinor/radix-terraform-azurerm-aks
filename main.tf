@@ -20,14 +20,14 @@ resource "azurerm_kubernetes_cluster" "kubernetes_cluster" {
     azurerm_virtual_network.vnet_cluster
   ]
 
-  name                            = var.cluster_name
+  name                            = var.CLUSTER_NAME
   location                        = var.AZ_LOCATION
   resource_group_name             = var.AZ_RESOURCE_GROUP_CLUSTERS
-  dns_prefix                      = "${var.cluster_name}-${random_id.four_byte.hex}"
-  kubernetes_version              = var.aks_kubernetes_version
+  dns_prefix                      = "${var.CLUSTER_NAME}-${random_id.four_byte.hex}"
+  kubernetes_version              = var.AKS_KUBERNETES_VERSION
   local_account_disabled          = true
   sku_tier                        = "Paid"
-  api_server_authorized_ip_ranges = length(var.whitelist_ips) != 0 ? var.whitelist_ips : null
+  api_server_authorized_ip_ranges = length(var.WHITELIST_IPS) != 0 ? var.WHITELIST_IPS : null
 
   azure_active_directory_role_based_access_control {
     managed                = true
@@ -35,9 +35,9 @@ resource "azurerm_kubernetes_cluster" "kubernetes_cluster" {
   }
 
   default_node_pool {
-    name                = var.aks_node_pool_name
-    vm_size             = var.aks_node_pool_vm_size
-    # node_count          = var.aks_node_count
+    name                = var.AKS_NODE_POOL_NAME
+    vm_size             = var.AKS_NODE_POOL_VM_SIZE
+    # node_count          = var.AKS_NODE_COUNT
     enable_auto_scaling = true
     min_count           = 2
     max_count           = 5
@@ -76,7 +76,7 @@ resource "azurerm_virtual_network" "vnet_cluster" {
     azurerm_network_security_group.nsg_cluster
   ]
 
-  name                = "vnet-${var.cluster_name}"
+  name                = "vnet-${var.CLUSTER_NAME}"
   location            = var.AZ_LOCATION
   resource_group_name = var.AZ_RESOURCE_GROUP_CLUSTERS
   address_space       = ["10.${local.available_address}.0.0/16"] # get address_space from vnet-hub
@@ -91,7 +91,7 @@ resource "azurerm_virtual_network_peering" "cluster_to_hub" {
 }
 
 resource "azurerm_virtual_network_peering" "hub_to_cluster" {
-  name                         = "hub-to-${var.cluster_name}"
+  name                         = "hub-to-${var.CLUSTER_NAME}"
   resource_group_name          = var.AZ_RESOURCE_GROUP_VNET_HUB
   virtual_network_name         = data.azurerm_virtual_network.hub.name
   remote_virtual_network_id    = azurerm_virtual_network.vnet_cluster.id
@@ -99,19 +99,19 @@ resource "azurerm_virtual_network_peering" "hub_to_cluster" {
 }
 
 resource "azurerm_subnet" "subnet_cluster" {
-  name                 = "subnet-${var.cluster_name}"
+  name                 = "subnet-${var.CLUSTER_NAME}"
   resource_group_name  = var.AZ_RESOURCE_GROUP_CLUSTERS
   virtual_network_name = azurerm_virtual_network.vnet_cluster.name
   address_prefixes     = ["10.${local.available_address}.0.0/18"] # get address_space from vnet-hub
 }
 
 resource "azurerm_network_security_group" "nsg_cluster" {
-  name                = "nsg-${var.cluster_name}"
+  name                = "nsg-${var.CLUSTER_NAME}"
   location            = var.AZ_LOCATION
   resource_group_name = var.AZ_RESOURCE_GROUP_CLUSTERS
 
   security_rule {
-    name                       = "nsg-${var.cluster_name}"
+    name                       = "nsg-${var.CLUSTER_NAME}"
     priority                   = "100"
     direction                  = "Inbound"
     access                     = "Allow"
@@ -124,7 +124,7 @@ resource "azurerm_network_security_group" "nsg_cluster" {
 }
 
 resource "azurerm_public_ip" "pip_ingress" {
-  name                = "pip-radix-ingress-${var.RADIX_ZONE}-${var.RADIX_ENVIRONMENT}-${var.cluster_name}"
+  name                = "pip-radix-ingress-${var.RADIX_ZONE}-${var.RADIX_ENVIRONMENT}-${var.CLUSTER_NAME}"
   resource_group_name = var.AZ_RESOURCE_GROUP_COMMON
   location            = var.AZ_LOCATION
   allocation_method   = "Static"
