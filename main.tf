@@ -1,9 +1,9 @@
 locals {
   # get list of available addresses
   available_addresses_starte_range = 3
-  available_addresses_end_range = 255
-  available_addresses_index_list = [for i, el in range(local.available_addresses_starte_range,local.available_addresses_end_range) : "${i+local.available_addresses_starte_range}" if (contains(data.azurerm_virtual_network.hub.vnet_peerings_addresses, "10.${i+local.available_addresses_starte_range}.0.0/16") == false)]
-  available_address = local.available_addresses_index_list[0]
+  available_addresses_end_range    = 255
+  available_addresses_index_list   = [for i, el in range(local.available_addresses_starte_range, local.available_addresses_end_range) : "${i + local.available_addresses_starte_range}" if(contains(data.azurerm_virtual_network.hub.vnet_peerings_addresses, "10.${i + local.available_addresses_starte_range}.0.0/16") == false)]
+  available_address                = local.available_addresses_index_list[0]
 }
 
 data "azurerm_virtual_network" "hub" {
@@ -28,6 +28,7 @@ resource "azurerm_kubernetes_cluster" "kubernetes_cluster" {
   local_account_disabled          = true
   sku_tier                        = "Paid"
   api_server_authorized_ip_ranges = length(var.WHITELIST_IPS) != 0 ? var.WHITELIST_IPS : null
+  oidc_issuer_enabled             = true
 
   azure_active_directory_role_based_access_control {
     managed                = true
@@ -35,9 +36,8 @@ resource "azurerm_kubernetes_cluster" "kubernetes_cluster" {
   }
 
   default_node_pool {
-    name                = var.AKS_NODE_POOL_NAME
-    vm_size             = var.AKS_NODE_POOL_VM_SIZE
-    # node_count          = var.AKS_NODE_COUNT
+    name    = var.AKS_NODE_POOL_NAME
+    vm_size = var.AKS_NODE_POOL_VM_SIZE
     enable_auto_scaling = true
     min_count           = 2
     max_count           = 5
