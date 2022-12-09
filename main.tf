@@ -45,14 +45,17 @@ resource "azurerm_kubernetes_cluster" "kubernetes_cluster" {
   }
 
   default_node_pool {
-    name                = var.AKS_NODE_POOL_NAME
-    vm_size             = var.AKS_NODE_POOL_VM_SIZE
-    enable_auto_scaling = true
-    min_count           = 2
-    max_count           = 5
-    max_pods            = 110
-    os_disk_size_gb     = 128
-    vnet_subnet_id      = azurerm_subnet.subnet_cluster.id
+    name                         = var.AKS_SYSTEM_NODE_POOL_NAME
+    vm_size                      = var.AKS_NODE_POOL_VM_SIZE
+    enable_auto_scaling          = true
+    min_count                    = var.AKS_SYSTEM_NODE_MIN_COUNT
+    max_count                    = var.AKS_SYSTEM_NODE_MAX_COUNT
+    max_pods                     = 110
+    os_disk_size_gb              = 128
+    vnet_subnet_id               = azurerm_subnet.subnet_cluster.id
+    node_labels                  = tomap({ nodepool-type = "system", nodepoolos = "linux", app = "system-apps" })
+    only_critical_addons_enabled = true
+
   }
 
   identity {
@@ -77,6 +80,19 @@ resource "azurerm_kubernetes_cluster" "kubernetes_cluster" {
     object_id                 = var.MI_AKSKUBELET[0].object_id
     user_assigned_identity_id = var.MI_AKSKUBELET[0].id
   }
+}
+
+resource "azurerm_kubernetes_cluster_node_pool" "userpool" {
+  name                  = var.AKS_USER_NODE_POOL_NAME
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.kubernetes_cluster.id
+  vm_size               = var.AKS_NODE_POOL_VM_SIZE
+  enable_auto_scaling   = true
+  min_count             = var.AKS_USER_NODE_MIN_COUNT
+  max_count             = var.AKS_USER_NODE_MAX_COUNT
+  max_pods              = 110
+  os_disk_size_gb       = 128
+  mode                  = "User"
+  vnet_subnet_id        = azurerm_subnet.subnet_cluster.id
 }
 
 resource "azurerm_virtual_network" "vnet_cluster" {
@@ -140,17 +156,3 @@ resource "azurerm_public_ip" "pip_ingress" {
   sku                 = "Standard"
   sku_tier            = "Regional"
 }
-
-
-# data "azurerm_container_registry" "this" {
-#   name                = "radixdev"
-#   AZ_RESOURCE_GROUP_CLUSTERS = var.AZ_RESOURCE_GROUP_COMMON
-# }
-
-# Resource already exist and for safety we don't import it. We take this in use later.
-# resource "azurerm_role_assignment" "this" {
-#   principal_id                     = var.MI_AKSKUBELET[0].object_id
-#   role_definition_name             = "AcrPull"
-#   scope                            = data.azurerm_container_registry.this.id
-#   skip_service_principal_aad_check = true
-# }
