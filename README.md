@@ -27,6 +27,7 @@ No modules.
 | Name | Type |
 |------|------|
 | [azurerm_kubernetes_cluster.kubernetes_cluster](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/kubernetes_cluster) | resource |
+| [azurerm_kubernetes_cluster_node_pool.userpool](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/kubernetes_cluster_node_pool) | resource |
 | [azurerm_network_security_group.nsg_cluster](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_group) | resource |
 | [azurerm_public_ip.pip_ingress](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) | resource |
 | [azurerm_subnet.subnet_cluster](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) | resource |
@@ -42,14 +43,18 @@ No modules.
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_AKS_KUBERNETES_VERSION"></a> [AKS\_KUBERNETES\_VERSION](#input\_AKS\_KUBERNETES\_VERSION) | kubernetes version | `string` | n/a | yes |
-| <a name="input_AKS_NODE_COUNT"></a> [AKS\_NODE\_COUNT](#input\_AKS\_NODE\_COUNT) | Number of nodes | `number` | n/a | yes |
-| <a name="input_AKS_NODE_POOL_NAME"></a> [AKS\_NODE\_POOL\_NAME](#input\_AKS\_NODE\_POOL\_NAME) | Node pool name | `string` | n/a | yes |
-| <a name="input_AKS_NODE_POOL_VM_SIZE"></a> [AKS\_NODE\_POOL\_VM\_SIZE](#input\_AKS\_NODE\_POOL\_VM\_SIZE) | VM type | `string` | n/a | yes |
+| <a name="input_AKS_NODE_POOL_VM_SIZE"></a> [AKS\_NODE\_POOL\_VM\_SIZE](#input\_AKS\_NODE\_POOL\_VM\_SIZE) | The SKU which should be used for the Virtual Machines used in this Node Pool | `string` | n/a | yes |
+| <a name="input_AKS_SYSTEM_NODE_MAX_COUNT"></a> [AKS\_SYSTEM\_NODE\_MAX\_COUNT](#input\_AKS\_SYSTEM\_NODE\_MAX\_COUNT) | The maximum number of nodes which should exist in this Node Pool | `number` | n/a | yes |
+| <a name="input_AKS_SYSTEM_NODE_MIN_COUNT"></a> [AKS\_SYSTEM\_NODE\_MIN\_COUNT](#input\_AKS\_SYSTEM\_NODE\_MIN\_COUNT) | The minimum number of nodes which should exist in this Node Pool | `number` | n/a | yes |
+| <a name="input_AKS_SYSTEM_NODE_POOL_NAME"></a> [AKS\_SYSTEM\_NODE\_POOL\_NAME](#input\_AKS\_SYSTEM\_NODE\_POOL\_NAME) | The name of the Node Pool which should be created within the Kubernetes Cluster | `string` | n/a | yes |
+| <a name="input_AKS_USER_NODE_MAX_COUNT"></a> [AKS\_USER\_NODE\_MAX\_COUNT](#input\_AKS\_USER\_NODE\_MAX\_COUNT) | The maximum number of nodes which should exist in this Node Pool | `number` | n/a | yes |
+| <a name="input_AKS_USER_NODE_MIN_COUNT"></a> [AKS\_USER\_NODE\_MIN\_COUNT](#input\_AKS\_USER\_NODE\_MIN\_COUNT) | The minimum number of nodes which should exist in this Node Pool | `number` | n/a | yes |
+| <a name="input_AKS_USER_NODE_POOL_NAME"></a> [AKS\_USER\_NODE\_POOL\_NAME](#input\_AKS\_USER\_NODE\_POOL\_NAME) | The name of the Node Pool which should be created within the Kubernetes Cluster | `string` | n/a | yes |
 | <a name="input_AZ_LOCATION"></a> [AZ\_LOCATION](#input\_AZ\_LOCATION) | The location to create the resources in. | `string` | n/a | yes |
 | <a name="input_AZ_RESOURCE_GROUP_CLUSTERS"></a> [AZ\_RESOURCE\_GROUP\_CLUSTERS](#input\_AZ\_RESOURCE\_GROUP\_CLUSTERS) | Resource group name for clusters | `string` | n/a | yes |
 | <a name="input_AZ_RESOURCE_GROUP_COMMON"></a> [AZ\_RESOURCE\_GROUP\_COMMON](#input\_AZ\_RESOURCE\_GROUP\_COMMON) | Resource group name for common | `string` | n/a | yes |
 | <a name="input_AZ_RESOURCE_GROUP_VNET_HUB"></a> [AZ\_RESOURCE\_GROUP\_VNET\_HUB](#input\_AZ\_RESOURCE\_GROUP\_VNET\_HUB) | Resource group name for vnet hub | `string` | n/a | yes |
-| <a name="input_CLUSTER_NAME"></a> [CLUSTER\_NAME](#input\_CLUSTER\_NAME) | Cluster name | `string` | n/a | yes |
+| <a name="input_CLUSTER_NAME"></a> [CLUSTER\_NAME](#input\_CLUSTER\_NAME) | The name of the Managed Kubernetes Cluster to create | `string` | n/a | yes |
 | <a name="input_MI_AKS"></a> [MI\_AKS](#input\_MI\_AKS) | Manage identity to assign to cluster | <pre>list(object({<br>    client_id = string<br>    id        = string<br>    object_id = string<br>  }))</pre> | n/a | yes |
 | <a name="input_MI_AKSKUBELET"></a> [MI\_AKSKUBELET](#input\_MI\_AKSKUBELET) | Manage identity to assign to cluster | <pre>list(object({<br>    client_id = string<br>    id        = string<br>    object_id = string<br>  }))</pre> | n/a | yes |
 | <a name="input_RADIX_ENVIRONMENT"></a> [RADIX\_ENVIRONMENT](#input\_RADIX\_ENVIRONMENT) | Radix environment | `string` | n/a | yes |
