@@ -6,6 +6,7 @@ function error_exit() {
 }
 
 function check_deps() {
+    test -f "$(which az)" || error_exit "az command not detected in path, please install it"
     test -f "$(which jq)" || error_exit "jq command not detected in path, please install it"
 }
 
