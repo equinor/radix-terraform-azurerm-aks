@@ -4,6 +4,8 @@ locals {
   available_addresses_end_range    = 255
   available_addresses_index_list   = [for i, el in range(local.available_addresses_starte_range, local.available_addresses_end_range) : "${i + local.available_addresses_starte_range}" if(contains(data.azurerm_virtual_network.hub.vnet_peerings_addresses, "10.${i + local.available_addresses_starte_range}.0.0/16") == false)]
   available_address                = local.available_addresses_index_list[0]
+  # variables
+  hub_to_cluster_name = "hub-to-${var.CLUSTER_NAME}"
 }
 
 data "azurerm_virtual_network" "hub" {
@@ -12,10 +14,10 @@ data "azurerm_virtual_network" "hub" {
 }
 
 data "external" "getAddressSpaceForVNET" {
-  program = ["bash", "./getAddressSpaceForVNET.sh"]
+  program = ["bash", "${path.module}/scripts/getAddressSpaceForVNET.sh"]
   query = {
     "AZ_RESOURCE_GROUP_VNET_HUB" = var.AZ_RESOURCE_GROUP_VNET_HUB,
-    "hub_to_cluster"             = azurerm_virtual_network_peering.hub_to_cluster.name,
+    "hub_to_cluster"             = local.hub_to_cluster_name,
     "AZ_VNET_HUB_NAME"           = data.azurerm_virtual_network.hub.name
   }
 }
@@ -104,7 +106,7 @@ resource "azurerm_virtual_network" "vnet_cluster" {
   name                = "vnet-${var.CLUSTER_NAME}"
   location            = var.AZ_LOCATION
   resource_group_name = var.AZ_RESOURCE_GROUP_CLUSTERS
-  address_space       = data.external.getAddressSpaceForVNET.result.address == "" ? ["10.${local.available_address}.0.0/16"] : ["${data.external.getAddressSpaceForVNET.result.AKS_VNET_ADDRESS_PREFIX}/16"]
+  address_space       = data.external.getAddressSpaceForVNET.result.AKS_VNET_ADDRESS_PREFIX == "" ? ["10.${local.available_address}.0.0/16"] : ["${data.external.getAddressSpaceForVNET.result.AKS_VNET_ADDRESS_PREFIX}/16"]
 }
 
 resource "azurerm_virtual_network_peering" "cluster_to_hub" {
@@ -116,7 +118,7 @@ resource "azurerm_virtual_network_peering" "cluster_to_hub" {
 }
 
 resource "azurerm_virtual_network_peering" "hub_to_cluster" {
-  name                         = "hub-to-${var.CLUSTER_NAME}"
+  name                         = local.hub_to_cluster_name
   resource_group_name          = var.AZ_RESOURCE_GROUP_VNET_HUB
   virtual_network_name         = data.azurerm_virtual_network.hub.name
   remote_virtual_network_id    = azurerm_virtual_network.vnet_cluster.id
@@ -127,7 +129,7 @@ resource "azurerm_subnet" "subnet_cluster" {
   name                 = "subnet-${var.CLUSTER_NAME}"
   resource_group_name  = var.AZ_RESOURCE_GROUP_CLUSTERS
   virtual_network_name = azurerm_virtual_network.vnet_cluster.name
-  address_prefixes     = data.external.getAddressSpaceForVNET.result.address == "" ? ["10.${local.available_address}.0.0/18"] : ["${data.external.getAddressSpaceForVNET.result.AKS_VNET_ADDRESS_PREFIX}/18"]
+  address_prefixes     = data.external.getAddressSpaceForVNET.result.AKS_VNET_ADDRESS_PREFIX == "" ? ["10.${local.available_address}.0.0/18"] : ["${data.external.getAddressSpaceForVNET.result.AKS_VNET_ADDRESS_PREFIX}/18"]
 }
 
 resource "azurerm_network_security_group" "nsg_cluster" {
