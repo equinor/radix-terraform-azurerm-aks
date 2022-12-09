@@ -4,6 +4,8 @@ locals {
   available_addresses_end_range    = 255
   available_addresses_index_list   = [for i, el in range(local.available_addresses_starte_range, local.available_addresses_end_range) : "${i + local.available_addresses_starte_range}" if(contains(data.azurerm_virtual_network.hub.vnet_peerings_addresses, "10.${i + local.available_addresses_starte_range}.0.0/16") == false)]
   available_address                = local.available_addresses_index_list[0]
+  # variables
+  hub_to_cluster_name = "hub-to-${var.CLUSTER_NAME}"
 }
 
 data "azurerm_virtual_network" "hub" {
@@ -12,10 +14,10 @@ data "azurerm_virtual_network" "hub" {
 }
 
 data "external" "getAddressSpaceForVNET" {
-  program = ["bash", "./getAddressSpaceForVNET.sh"]
+  program = ["bash", "${path.module}/scripts/getAddressSpaceForVNET.sh"]
   query = {
     "AZ_RESOURCE_GROUP_VNET_HUB" = var.AZ_RESOURCE_GROUP_VNET_HUB,
-    "hub_to_cluster"             = azurerm_virtual_network_peering.hub_to_cluster.name,
+    "hub_to_cluster"             = local.hub_to_cluster_name,
     "AZ_VNET_HUB_NAME"           = data.azurerm_virtual_network.hub.name
   }
 }
@@ -37,6 +39,7 @@ resource "azurerm_kubernetes_cluster" "kubernetes_cluster" {
   local_account_disabled          = true
   sku_tier                        = "Paid"
   api_server_authorized_ip_ranges = length(var.WHITELIST_IPS) != 0 ? var.WHITELIST_IPS : null
+  oidc_issuer_enabled             = true
 
   azure_active_directory_role_based_access_control {
     managed                = true
@@ -44,14 +47,17 @@ resource "azurerm_kubernetes_cluster" "kubernetes_cluster" {
   }
 
   default_node_pool {
-    name                = var.AKS_NODE_POOL_NAME
-    vm_size             = var.AKS_NODE_POOL_VM_SIZE
-    enable_auto_scaling = true
-    min_count           = 2
-    max_count           = 5
-    max_pods            = 110
-    os_disk_size_gb     = 128
-    vnet_subnet_id      = azurerm_subnet.subnet_cluster.id
+    name                         = var.AKS_SYSTEM_NODE_POOL_NAME
+    vm_size                      = var.AKS_NODE_POOL_VM_SIZE
+    enable_auto_scaling          = true
+    min_count                    = var.AKS_SYSTEM_NODE_MIN_COUNT
+    max_count                    = var.AKS_SYSTEM_NODE_MAX_COUNT
+    max_pods                     = 110
+    os_disk_size_gb              = 128
+    vnet_subnet_id               = azurerm_subnet.subnet_cluster.id
+    node_labels                  = tomap({ nodepool-type = "system", nodepoolos = "linux", app = "system-apps" })
+    only_critical_addons_enabled = true
+
   }
 
   identity {
@@ -78,6 +84,19 @@ resource "azurerm_kubernetes_cluster" "kubernetes_cluster" {
   }
 }
 
+resource "azurerm_kubernetes_cluster_node_pool" "userpool" {
+  name                  = var.AKS_USER_NODE_POOL_NAME
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.kubernetes_cluster.id
+  vm_size               = var.AKS_NODE_POOL_VM_SIZE
+  enable_auto_scaling   = true
+  min_count             = var.AKS_USER_NODE_MIN_COUNT
+  max_count             = var.AKS_USER_NODE_MAX_COUNT
+  max_pods              = 110
+  os_disk_size_gb       = 128
+  mode                  = "User"
+  vnet_subnet_id        = azurerm_subnet.subnet_cluster.id
+}
+
 resource "azurerm_virtual_network" "vnet_cluster" {
   # Wait on NSG
   depends_on = [
@@ -87,7 +106,7 @@ resource "azurerm_virtual_network" "vnet_cluster" {
   name                = "vnet-${var.CLUSTER_NAME}"
   location            = var.AZ_LOCATION
   resource_group_name = var.AZ_RESOURCE_GROUP_CLUSTERS
-  address_space       = data.external.getAddressSpaceForVNET.result.address == "" ? ["10.${local.available_address}.0.0/16"] : ["${data.external.getAddressSpaceForVNET.result.AKS_VNET_ADDRESS_PREFIX}/16"]
+  address_space       = data.external.getAddressSpaceForVNET.result.AKS_VNET_ADDRESS_PREFIX == "" ? ["10.${local.available_address}.0.0/16"] : ["${data.external.getAddressSpaceForVNET.result.AKS_VNET_ADDRESS_PREFIX}/16"]
 }
 
 resource "azurerm_virtual_network_peering" "cluster_to_hub" {
@@ -99,7 +118,7 @@ resource "azurerm_virtual_network_peering" "cluster_to_hub" {
 }
 
 resource "azurerm_virtual_network_peering" "hub_to_cluster" {
-  name                         = "hub-to-${var.CLUSTER_NAME}"
+  name                         = local.hub_to_cluster_name
   resource_group_name          = var.AZ_RESOURCE_GROUP_VNET_HUB
   virtual_network_name         = data.azurerm_virtual_network.hub.name
   remote_virtual_network_id    = azurerm_virtual_network.vnet_cluster.id
@@ -110,7 +129,7 @@ resource "azurerm_subnet" "subnet_cluster" {
   name                 = "subnet-${var.CLUSTER_NAME}"
   resource_group_name  = var.AZ_RESOURCE_GROUP_CLUSTERS
   virtual_network_name = azurerm_virtual_network.vnet_cluster.name
-  address_prefixes     = data.external.getAddressSpaceForVNET.result.address == "" ? ["10.${local.available_address}.0.0/18"] : ["${data.external.getAddressSpaceForVNET.result.AKS_VNET_ADDRESS_PREFIX}/18"]
+  address_prefixes     = data.external.getAddressSpaceForVNET.result.AKS_VNET_ADDRESS_PREFIX == "" ? ["10.${local.available_address}.0.0/18"] : ["${data.external.getAddressSpaceForVNET.result.AKS_VNET_ADDRESS_PREFIX}/18"]
 }
 
 resource "azurerm_network_security_group" "nsg_cluster" {
@@ -139,17 +158,3 @@ resource "azurerm_public_ip" "pip_ingress" {
   sku                 = "Standard"
   sku_tier            = "Regional"
 }
-
-
-# data "azurerm_container_registry" "this" {
-#   name                = "radixdev"
-#   AZ_RESOURCE_GROUP_CLUSTERS = var.AZ_RESOURCE_GROUP_COMMON
-# }
-
-# Resource already exist and for safety we don't import it. We take this in use later.
-# resource "azurerm_role_assignment" "this" {
-#   principal_id                     = var.MI_AKSKUBELET[0].object_id
-#   role_definition_name             = "AcrPull"
-#   scope                            = data.azurerm_container_registry.this.id
-#   skip_service_principal_aad_check = true
-# }
