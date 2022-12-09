@@ -10,7 +10,7 @@ AKS_SYSTEM_NODE_POOL_NAME = "systempool"
 AKS_USER_NODE_MAX_COUNT   = "5"
 AKS_USER_NODE_MIN_COUNT   = "2"
 AKS_USER_NODE_POOL_NAME   = "userpool"
-CLUSTER_NAME              = "sondretf-dev"
+CLUSTER_NAME              = "akstf-example"
 
 #######################################################################################
 ### Zone and cluster settings
