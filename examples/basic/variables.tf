@@ -19,33 +19,48 @@ variable "AZ_PRIVATE_DNS_ZONES" {
 }
 
 variable "CLUSTER_NAME" {
-  description = "Cluster name"
+  description = "The name of the Managed Kubernetes Cluster to create"
   type        = string
 }
 
-variable "AKS_NODE_POOL_NAME" {
-  description = "Node pool name"
+variable "AKS_SYSTEM_NODE_POOL_NAME" {
+  description = "The name of the Node Pool which should be created within the Kubernetes Cluster"
+  type        = string
+}
+
+variable "AKS_USER_NODE_POOL_NAME" {
+  description = "The name of the Node Pool which should be created within the Kubernetes Cluster"
   type        = string
 }
 
 variable "AKS_NODE_POOL_VM_SIZE" {
-  description = "VM type"
+  description = "The SKU which should be used for the Virtual Machines used in this Node Pool"
   type        = string
 }
 
-variable "AKS_NODE_COUNT" {
-  description = "Number of nodes"
-  type        = number
+variable "AKS_SYSTEM_NODE_MIN_COUNT" {
+  description = "The minimum number of nodes which should exist in this Node Pool"
+  type = number
+}
+
+variable "AKS_SYSTEM_NODE_MAX_COUNT" {
+  description = "The maximum number of nodes which should exist in this Node Pool"
+  type = number
+}
+
+variable "AKS_USER_NODE_MIN_COUNT" {
+  description = "The minimum number of nodes which should exist in this Node Pool"
+  type = number
+}
+
+variable "AKS_USER_NODE_MAX_COUNT" {
+  description = "The maximum number of nodes which should exist in this Node Pool"
+  type = number
 }
 
 variable "AKS_KUBERNETES_VERSION" {
   description = "kubernetes version"
   type        = string
-}
-
-variable "WHITELIST_IPS" {
-  description = "List ipadresses that should be able to access the cluster"
-  type        = list(string)
 }
 
 variable "MI_AKSKUBELET" {
