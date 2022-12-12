@@ -28,10 +28,21 @@ variable "AKS_SYSTEM_NODE_POOL_NAME" {
   type        = string
 }
 
-variable "AKS_USER_NODE_POOL_NAME" {
-  description = "The name of the Node Pool which should be created within the Kubernetes Cluster"
-  type        = string
+variable "AKS_NODE_POOLS" {
+  description = "List of different nodepools configurations"
+  type = list(object({
+    name                  = string
+    kubernetes_cluster_id = string
+    vm_size               = string
+    min_count             = number
+    max_count             = number
+    mode                  = string
+    vnet_subnet_id        = string
+    node_labels           = optional(map(any))
+    node_taints           = optional(list(string))
+  }))
 }
+
 
 variable "AKS_NODE_POOL_VM_SIZE" {
   description = "The SKU which should be used for the Virtual Machines used in this Node Pool"
@@ -44,16 +55,6 @@ variable "AKS_SYSTEM_NODE_MIN_COUNT" {
 }
 
 variable "AKS_SYSTEM_NODE_MAX_COUNT" {
-  description = "The maximum number of nodes which should exist in this Node Pool"
-  type        = number
-}
-
-variable "AKS_USER_NODE_MIN_COUNT" {
-  description = "The minimum number of nodes which should exist in this Node Pool"
-  type        = number
-}
-
-variable "AKS_USER_NODE_MAX_COUNT" {
   description = "The maximum number of nodes which should exist in this Node Pool"
   type        = number
 }
