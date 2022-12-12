@@ -6,6 +6,51 @@ locals {
   AZ_RESOURCE_GROUP_VNET_HUB = "cluster-vnet-hub-${var.RADIX_ZONE}"
   CLUSTER_NAME               = var.CLUSTER_NAME
   WHITELIST_IPS              = jsondecode(textdecodebase64("${data.azurerm_key_vault_secret.whitelist_ips.value}", "UTF-8"))
+  AKS_NODE_POOLS = [
+    {
+      name                  = var.AKS_USER_NODE_POOL_NAME
+      kubernetes_cluster_id = module.aks.kubernetes_cluster.id
+      vm_size               = var.AKS_NODE_POOL_VM_SIZE
+      min_count             = var.AKS_USER_NODE_MIN_COUNT
+      max_count             = var.AKS_USER_NODE_MAX_COUNT
+      mode                  = "User"
+      vnet_subnet_id        = module.aks.subnet_cluster.id
+    },
+    {
+      name                  = "nc6sv3"
+      kubernetes_cluster_id = module.aks.kubernetes_cluster.id
+      vm_size               = "Standard_NC6s_v3"
+      min_count             = 0
+      max_count             = 1
+      mode                  = "User"
+      vnet_subnet_id        = module.aks.subnet_cluster.id
+      node_labels           = tomap({ sku = "gpu", gpu = "nvidia-v100", gpu-count = "1", radix-node-gpu = "nvidia-v100", radix-node-gpu-count = "1" })
+      node_taints           = ["sku=gpu:NoSchedule", "gpu=nvidia-v100:NoSchedule", "gpu-count=1:NoSchedule", "radix-node-gpu=nvidia-v100:NoSchedule", "radix-node-gpu-count=1:NoSchedule"]
+
+    },
+    {
+      name                  = "nc12sv3"
+      kubernetes_cluster_id = module.aks.kubernetes_cluster.id
+      vm_size               = "Standard_NC12s_v3"
+      min_count             = 0
+      max_count             = 1
+      mode                  = "User"
+      vnet_subnet_id        = module.aks.subnet_cluster.id
+      node_labels           = tomap({ sku = "gpu", gpu = "nvidia-v100", gpu-count = "2", radix-node-gpu = "nvidia-v100", radix-node-gpu-count = "2" })
+      node_taints           = ["sku=gpu:NoSchedule", "gpu=nvidia-v100:NoSchedule", "gpu-count=2:NoSchedule", "radix-node-gpu=nvidia-v100:NoSchedule", "radix-node-gpu-count=2:NoSchedule"]
+    },
+    {
+      name                  = "nc24sv3"
+      kubernetes_cluster_id = module.aks.kubernetes_cluster.id
+      vm_size               = "Standard_NC24s_v3"
+      min_count             = 0
+      max_count             = 1
+      mode                  = "User"
+      vnet_subnet_id        = module.aks.subnet_cluster.id
+      node_labels           = tomap({ sku = "gpu", gpu = "nvidia-v100", gpu-count = "4", radix-node-gpu = "nvidia-v100", radix-node-gpu-count = "4" })
+      node_taints           = ["sku=gpu:NoSchedule", "gpu=nvidia-v100:NoSchedule", "gpu-count=4:NoSchedule", "radix-node-gpu=nvidia-v100:NoSchedule", "radix-node-gpu-count=4:NoSchedule"]
+    }
+  ]
 }
 
 data "azurerm_key_vault" "keyvault_env" {
@@ -38,14 +83,12 @@ module "aks" {
   WHITELIST_IPS = length(local.WHITELIST_IPS.whitelist) != 0 ? [for x in local.WHITELIST_IPS.whitelist : x.ip] : null
 
   # AKS
-  AKS_KUBERNETES_VERSION    = var.AKS_KUBERNETES_VERSION   
-  AKS_NODE_POOL_VM_SIZE     = var.AKS_NODE_POOL_VM_SIZE    
+  AKS_KUBERNETES_VERSION    = var.AKS_KUBERNETES_VERSION
+  AKS_NODE_POOLS            = local.AKS_NODE_POOLS
+  AKS_NODE_POOL_VM_SIZE     = var.AKS_NODE_POOL_VM_SIZE
   AKS_SYSTEM_NODE_MAX_COUNT = var.AKS_SYSTEM_NODE_MAX_COUNT
   AKS_SYSTEM_NODE_MIN_COUNT = var.AKS_SYSTEM_NODE_MIN_COUNT
   AKS_SYSTEM_NODE_POOL_NAME = var.AKS_SYSTEM_NODE_POOL_NAME
-  AKS_USER_NODE_MAX_COUNT   = var.AKS_USER_NODE_MAX_COUNT  
-  AKS_USER_NODE_MIN_COUNT   = var.AKS_USER_NODE_MIN_COUNT  
-  AKS_USER_NODE_POOL_NAME   = var.AKS_USER_NODE_POOL_NAME  
 
   # Manage identity
   MI_AKSKUBELET = var.MI_AKSKUBELET
