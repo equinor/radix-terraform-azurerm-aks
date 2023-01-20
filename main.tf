@@ -150,7 +150,10 @@ resource "azurerm_network_security_group" "nsg_cluster" {
   }
 }
 
+# AT
 resource "azurerm_public_ip" "pip_ingress" {
+  # Check if AT or AA
+  count               = var.CLUSTER_TYPE == "at"
   name                = "pip-radix-ingress-${var.RADIX_ZONE}-${var.RADIX_ENVIRONMENT}-${var.CLUSTER_NAME}"
   resource_group_name = var.AZ_RESOURCE_GROUP_COMMON
   location            = var.AZ_LOCATION

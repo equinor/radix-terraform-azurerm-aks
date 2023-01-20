@@ -23,6 +23,11 @@ variable "CLUSTER_NAME" {
   type        = string
 }
 
+variable "CLUSTER_TYPE" {
+  description = "The type of the Managed Kubernetes Cluster to create (active active or active test)"
+  type        = string
+}
+
 variable "AKS_SYSTEM_NODE_POOL_NAME" {
   description = "The name of the Node Pool which should be created within the Kubernetes Cluster"
   type        = string
