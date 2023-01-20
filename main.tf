@@ -23,8 +23,8 @@ data "external" "getAddressSpaceForVNET" {
   }
 }
 
-data "external" "getPublicOutboudIps" {
-  program = ["bash", "../scripts/getPublicOutboudIps.sh"]
+data "external" "getPublicOutboundIps" {
+  program = ["bash", "../scripts/getPublicOutboundIps.sh"]
   query = {
     AZ_LOCATION              = var.AZ_LOCATION
     AZ_SUBSCRIPTION_ID       = var.AZ_SUBSCRIPTION_ID
@@ -87,7 +87,7 @@ resource "azurerm_kubernetes_cluster" "kubernetes_cluster" {
     service_cidr       = "10.2.0.0/18"
     dynamic "load_balancer_profile" {
       for_each                 = var.MIGRATION_STRATEGY == "aa" ? [1] : []
-      outbound_ip_address_ids  = data.getPublicOutboudIps.result.EGRESS_IP_ID_LIST
+      outbound_ip_address_ids  = data.getPublicOutboundIps.result.EGRESS_IP_ID_LIST
       outbound_ports_allocated = 4000
     }
   }
@@ -168,7 +168,7 @@ resource "azurerm_network_security_group" "nsg_cluster" {
     protocol                   = "Tcp"
     destination_port_ranges    = ["80", "443"]
     # destination_address_prefix = azurerm_public_ip.pip_ingress.ip_address # AT
-    destination_address_prefix = data.getPublicOutboudIps.result.EGRESS_IP_LIST
+    destination_address_prefix = data.getPublicOutboundIps.result.EGRESS_IP_LIST
     source_port_range          = "*"
     source_address_prefix      = "*"
   }
@@ -177,7 +177,7 @@ resource "azurerm_network_security_group" "nsg_cluster" {
 # AT
 resource "azurerm_public_ip" "pip_ingress" {
   # Check if AT or AA
-  count               = var.CLUSTER_TYPE == "at"
+  count               = var.MIGRATION_STRATEGY == "at" ? 1 : 0
   name                = "pip-radix-ingress-${var.RADIX_ZONE}-${var.RADIX_ENVIRONMENT}-${var.CLUSTER_NAME}"
   resource_group_name = var.AZ_RESOURCE_GROUP_COMMON
   location            = var.AZ_LOCATION

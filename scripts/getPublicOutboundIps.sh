@@ -43,7 +43,7 @@ AVAILABLE_EGRESS_IPS="$(az network public-ip list \
 # Select range of egress ips based on OUTBOUND_IP_COUNT
 SELECTED_EGRESS_IPS="$(echo "$AVAILABLE_EGRESS_IPS" | jq '.[0:'$OUTBOUND_IP_COUNT']')"
 
-function getPublicOutboudIpsIdList() {
+function getPublicOutboundIpsIdList() {
     # Create the comma separated string of egress ip resource ids to pass in as --load-balancer-outbound-ips for aks
     while read -r line; do
         EGRESS_IP_ID_LIST+="${line},"
@@ -52,7 +52,7 @@ function getPublicOutboudIpsIdList() {
     echo "${EGRESS_IP_ID_LIST}"
 }
 
-function getPublicOutboudIpsList() {
+function getPublicOutboundIpsList() {
     # Create the comma separated string of egress ip resource ids to pass in as --load-balancer-outbound-ips for aks
     while read -r line; do
         EGRESS_IP_ID_LIST+="${line},"
@@ -64,8 +64,8 @@ function getPublicOutboudIpsList() {
 function produce_output() {
     # Create a JSON object and pass it back
     jq -n \
-        --arg EGRESS_IP_ID_LIST "$(getPublicOutboudIpsIdList)" \
-        --arg EGRESS_IP_LIST "$(getPublicOutboudIpsList)" \
+        --arg EGRESS_IP_ID_LIST "$(getPublicOutboundIpsIdList)" \
+        --arg EGRESS_IP_LIST "$(getPublicOutboundIpsList)" \
         '{"EGRESS_IP_ID_LIST":$EGRESS_IP_ID_LIST, "EGRESS_IP_LIST":$EGRESS_IP_LIST}'
 }
 
