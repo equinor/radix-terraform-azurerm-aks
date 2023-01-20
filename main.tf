@@ -87,7 +87,7 @@ resource "azurerm_kubernetes_cluster" "kubernetes_cluster" {
     service_cidr       = "10.2.0.0/18"
     dynamic "load_balancer_profile" {
       for_each                 = var.MIGRATION_STRATEGY == "aa" ? [1] : []
-      outbound_ip_address_ids  = data.getPublicOutboundIps.result.EGRESS_IP_ID_LIST
+      outbound_ip_address_ids  = data.external.getPublicOutboundIps.result.EGRESS_IP_ID_LIST
       outbound_ports_allocated = 4000
     }
   }
@@ -168,7 +168,7 @@ resource "azurerm_network_security_group" "nsg_cluster" {
     protocol                   = "Tcp"
     destination_port_ranges    = ["80", "443"]
     # destination_address_prefix = azurerm_public_ip.pip_ingress.ip_address # AT
-    destination_address_prefix = data.getPublicOutboundIps.result.EGRESS_IP_LIST
+    destination_address_prefix = data.external.getPublicOutboundIps.result.EGRESS_IP_LIST
     source_port_range          = "*"
     source_address_prefix      = "*"
   }
