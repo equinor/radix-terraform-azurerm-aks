@@ -103,17 +103,21 @@ resource "azurerm_kubernetes_cluster" "kubernetes_cluster" {
   }
 }
 
-resource "azurerm_kubernetes_cluster_node_pool" "userpool" {
-  name                  = var.AKS_USER_NODE_POOL_NAME
-  kubernetes_cluster_id = azurerm_kubernetes_cluster.kubernetes_cluster.id
-  vm_size               = var.AKS_NODE_POOL_VM_SIZE
+resource "azurerm_kubernetes_cluster_node_pool" "nodepools" {
+  count = length(var.AKS_NODE_POOLS)
+
+  name                  = var.AKS_NODE_POOLS[count.index].name
+  kubernetes_cluster_id = var.AKS_NODE_POOLS[count.index].kubernetes_cluster_id
+  vm_size               = var.AKS_NODE_POOLS[count.index].vm_size
   enable_auto_scaling   = true
-  min_count             = var.AKS_USER_NODE_MIN_COUNT
-  max_count             = var.AKS_USER_NODE_MAX_COUNT
+  min_count             = var.AKS_NODE_POOLS[count.index].min_count
+  max_count             = var.AKS_NODE_POOLS[count.index].max_count
   max_pods              = 110
   os_disk_size_gb       = 128
-  mode                  = "User"
-  vnet_subnet_id        = azurerm_subnet.subnet_cluster.id
+  mode                  = var.AKS_NODE_POOLS[count.index].mode
+  vnet_subnet_id        = var.AKS_NODE_POOLS[count.index].vnet_subnet_id
+  node_labels           = var.AKS_NODE_POOLS[count.index].node_labels
+  node_taints           = var.AKS_NODE_POOLS[count.index].node_taints
 }
 
 resource "azurerm_virtual_network" "vnet_cluster" {
