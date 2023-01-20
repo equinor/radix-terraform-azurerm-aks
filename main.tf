@@ -24,7 +24,7 @@ data "external" "getAddressSpaceForVNET" {
 }
 
 data "external" "getPublicOutboundIps" {
-  program = ["bash", "../scripts/getPublicOutboundIps.sh"]
+  program = ["bash", "${path.module}/scripts/getPublicOutboundIps.sh"]
   query = {
     AZ_LOCATION              = var.AZ_LOCATION
     AZ_SUBSCRIPTION_ID       = var.AZ_SUBSCRIPTION_ID
