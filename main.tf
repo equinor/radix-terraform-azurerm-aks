@@ -5,7 +5,8 @@ locals {
   available_addresses_index_list   = [for i, el in range(local.available_addresses_starte_range, local.available_addresses_end_range) : "${i + local.available_addresses_starte_range}" if(contains(data.azurerm_virtual_network.hub.vnet_peerings_addresses, "10.${i + local.available_addresses_starte_range}.0.0/16") == false)]
   available_address                = local.available_addresses_index_list[0]
   # variables
-  hub_to_cluster_name = "hub-to-${var.CLUSTER_NAME}"
+  hub_to_cluster_name    = "hub-to-${var.CLUSTER_NAME}"
+  AZ_IPPRE_OUTBOUND_NAME = "ippre-radix-aks-${var.CLUSTER_TYPE}-${var.AZ_LOCATION}-001"
 }
 
 data "azurerm_virtual_network" "hub" {
@@ -19,6 +20,19 @@ data "external" "getAddressSpaceForVNET" {
     "AZ_RESOURCE_GROUP_VNET_HUB" = var.AZ_RESOURCE_GROUP_VNET_HUB,
     "hub_to_cluster"             = local.hub_to_cluster_name,
     "AZ_VNET_HUB_NAME"           = data.azurerm_virtual_network.hub.name
+  }
+}
+
+data "external" "getPublicOutboudIps" {
+  program = ["bash", "../scripts/getPublicOutboudIps.sh"]
+  query = {
+    AZ_LOCATION              = var.AZ_LOCATION
+    AZ_SUBSCRIPTION_ID       = var.AZ_SUBSCRIPTION_ID
+    AZ_RESOURCE_GROUP_COMMON = var.AZ_RESOURCE_GROUP_COMMON
+    CLUSTER_TYPE             = var.CLUSTER_TYPE
+    MIGRATION_STRATEGY       = var.MIGRATION_STRATEGY
+    OUTBOUND_IP_COUNT        = "1"
+    AZ_IPPRE_OUTBOUND_NAME   = local.AZ_IPPRE_OUTBOUND_NAME
   }
 }
 
@@ -71,6 +85,11 @@ resource "azurerm_kubernetes_cluster" "kubernetes_cluster" {
     docker_bridge_cidr = "172.17.0.1/16"
     dns_service_ip     = "10.2.0.10"
     service_cidr       = "10.2.0.0/18"
+    dynamic "load_balancer_profile" {
+      for_each                 = var.MIGRATION_STRATEGY == "aa" ? [1] : []
+      outbound_ip_address_ids  = data.getPublicOutboudIps.result.EGRESS_IP_ID_LIST
+      outbound_ports_allocated = 4000
+    }
   }
 
   key_vault_secrets_provider {
@@ -144,7 +163,8 @@ resource "azurerm_network_security_group" "nsg_cluster" {
     access                     = "Allow"
     protocol                   = "Tcp"
     destination_port_ranges    = ["80", "443"]
-    destination_address_prefix = azurerm_public_ip.pip_ingress.ip_address
+    # destination_address_prefix = azurerm_public_ip.pip_ingress.ip_address # AT
+    destination_address_prefix = data.getPublicOutboudIps.result.EGRESS_IP_LIST
     source_port_range          = "*"
     source_address_prefix      = "*"
   }
