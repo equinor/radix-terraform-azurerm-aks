@@ -86,7 +86,7 @@ resource "azurerm_kubernetes_cluster" "kubernetes_cluster" {
     dns_service_ip     = "10.2.0.10"
     service_cidr       = "10.2.0.0/18"
     dynamic "load_balancer_profile" {
-      for_each                 = var.MIGRATION_STRATEGY == "aa" ? [1] : []
+      for_each = var.MIGRATION_STRATEGY == "aa" ? [1] : []
       content {
         outbound_ip_address_ids  = data.external.getPublicOutboundIps.result.EGRESS_IP_ID_LIST
         outbound_ports_allocated = 4000
@@ -155,6 +155,7 @@ resource "azurerm_subnet" "subnet_cluster" {
   resource_group_name  = var.AZ_RESOURCE_GROUP_CLUSTERS
   virtual_network_name = azurerm_virtual_network.vnet_cluster.name
   address_prefixes     = data.external.getAddressSpaceForVNET.result.AKS_VNET_ADDRESS_PREFIX == "" ? ["10.${local.available_address}.0.0/18"] : ["${data.external.getAddressSpaceForVNET.result.AKS_VNET_ADDRESS_PREFIX}/18"]
+  service_endpoints    = ["Microsoft.Storage"]
 }
 
 resource "azurerm_network_security_group" "nsg_cluster" {
@@ -163,12 +164,12 @@ resource "azurerm_network_security_group" "nsg_cluster" {
   resource_group_name = var.AZ_RESOURCE_GROUP_CLUSTERS
 
   security_rule {
-    name                       = "nsg-${var.CLUSTER_NAME}"
-    priority                   = "100"
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    destination_port_ranges    = ["80", "443"]
+    name                    = "nsg-${var.CLUSTER_NAME}"
+    priority                = "100"
+    direction               = "Inbound"
+    access                  = "Allow"
+    protocol                = "Tcp"
+    destination_port_ranges = ["80", "443"]
     # destination_address_prefix = azurerm_public_ip.pip_ingress.ip_address # AT
     destination_address_prefix = data.external.getPublicOutboundIps.result.EGRESS_IP_LIST
     source_port_range          = "*"
