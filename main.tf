@@ -85,7 +85,7 @@ resource "azurerm_kubernetes_cluster" "kubernetes_cluster" {
     docker_bridge_cidr = "172.17.0.1/16"
     dns_service_ip     = "10.2.0.10"
     service_cidr       = "10.2.0.0/18"
-    dynamic "load_balancer_profile" {
+    dynamic load_balancer_profile {
       for_each                 = var.MIGRATION_STRATEGY == "aa" ? [1] : []
       outbound_ip_address_ids  = data.external.getPublicOutboundIps.result.EGRESS_IP_ID_LIST
       outbound_ports_allocated = 4000
