@@ -171,7 +171,7 @@ resource "azurerm_network_security_group" "nsg_cluster" {
     protocol                = "Tcp"
     destination_port_ranges = ["80", "443"]
     # destination_address_prefix = azurerm_public_ip.pip_ingress.ip_address # AT
-    destination_address_prefix = var.MIGRATION_STRATEGY == "at" ? azurerm_public_ip.pip_ingress.ip_address : data.external.getPublicOutboundIps.result.EGRESS_IP_LIST
+    destination_address_prefix = var.MIGRATION_STRATEGY == "at" ? azurerm_public_ip.pip_ingress[count.index].ip_address : data.external.getPublicOutboundIps.result.EGRESS_IP_LIST
     source_port_range          = "*"
     source_address_prefix      = "*"
   }
