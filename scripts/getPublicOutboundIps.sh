@@ -29,34 +29,26 @@ function parse_input() {
     if [[ -z "${AZ_IPPRE_OUTBOUND_NAME}" ]]; then export AZ_VNET_HUB_NAME=none; fi
 }
 
-# MIGRATION_STRATEGY outbound PIP assignment
-# if migrating active to active cluster (eg. dev to dev)
-# Path to Public IP Prefix which contains the public outbound IPs
-IPPRE_EGRESS_ID="/subscriptions/$AZ_SUBSCRIPTION_ID/resourceGroups/$AZ_RESOURCE_GROUP_COMMON/providers/Microsoft.Network/publicIPPrefixes/$AZ_IPPRE_OUTBOUND_NAME"
-# IPPRE_INGRESS_ID="/subscriptions/$AZ_SUBSCRIPTION_ID/resourceGroups/$AZ_RESOURCE_GROUP_COMMON/providers/Microsoft.Network/publicIPPrefixes/$AZ_IPPRE_INBOUND_NAME"
+function getPublicOutboundIps() {
+    field=$1
+    # MIGRATION_STRATEGY outbound PIP assignment
+    # if migrating active to active cluster (eg. dev to dev)
+    # Path to Public IP Prefix which contains the public outbound IPs
+    IPPRE_EGRESS_ID="/subscriptions/$AZ_SUBSCRIPTION_ID/resourceGroups/$AZ_RESOURCE_GROUP_COMMON/providers/Microsoft.Network/publicIPPrefixes/$AZ_IPPRE_OUTBOUND_NAME"
+    # IPPRE_INGRESS_ID="/subscriptions/$AZ_SUBSCRIPTION_ID/resourceGroups/$AZ_RESOURCE_GROUP_COMMON/providers/Microsoft.Network/publicIPPrefixes/$AZ_IPPRE_INBOUND_NAME"
 
-# list of AVAILABLE public EGRESS ips assigned to the Radix Zone
-# echo "Getting list of available public egress ips in $RADIX_ZONE..."
-AVAILABLE_EGRESS_IPS="$(az network public-ip list \
-    --query "[?publicIPPrefix.id=='${IPPRE_EGRESS_ID}' && ipConfiguration.resourceGroup==null].{name:name, id:id, ipAddress:ipAddress}")"
+    # list of AVAILABLE public EGRESS ips assigned to the Radix Zone
+    # echo "Getting list of available public egress ips in $RADIX_ZONE..."
+    AVAILABLE_EGRESS_IPS="$(az network public-ip list \
+        --query "[?publicIPPrefix.id=='${IPPRE_EGRESS_ID}' && ipConfiguration.resourceGroup==null].{name:name, id:id, ipAddress:ipAddress}")"
 
-# Select range of egress ips based on OUTBOUND_IP_COUNT
-SELECTED_EGRESS_IPS="$(echo "$AVAILABLE_EGRESS_IPS" | jq '.[0:'$OUTBOUND_IP_COUNT']')"
+    # Select range of egress ips based on OUTBOUND_IP_COUNT
+    SELECTED_EGRESS_IPS="$(echo "$AVAILABLE_EGRESS_IPS" | jq '.[0:'$OUTBOUND_IP_COUNT']')"
 
-function getPublicOutboundIpsIdList() {
     # Create the comma separated string of egress ip resource ids to pass in as --load-balancer-outbound-ips for aks
     while read -r line; do
         EGRESS_IP_ID_LIST+="${line},"
-    done <<<"$(echo ${SELECTED_EGRESS_IPS} | jq -r '.[].id')"
-    EGRESS_IP_ID_LIST=${EGRESS_IP_ID_LIST%,} # Remove trailing comma
-    echo "${EGRESS_IP_ID_LIST}"
-}
-
-function getPublicOutboundIpsList() {
-    # Create the comma separated string of egress ip resource ids to pass in as --load-balancer-outbound-ips for aks
-    while read -r line; do
-        EGRESS_IP_ID_LIST+="${line},"
-    done <<<"$(echo ${SELECTED_EGRESS_IPS} | jq -r '.[].ipAddress')"
+    done <<<"$(echo ${SELECTED_EGRESS_IPS} | jq -r .[].$field)"
     EGRESS_IP_ID_LIST=${EGRESS_IP_ID_LIST%,} # Remove trailing comma
     echo "${EGRESS_IP_ID_LIST}"
 }
@@ -64,8 +56,8 @@ function getPublicOutboundIpsList() {
 function produce_output() {
     # Create a JSON object and pass it back
     jq -n \
-        --arg EGRESS_IP_ID_LIST "$(getPublicOutboundIpsIdList)" \
-        --arg EGRESS_IP_LIST "$(getPublicOutboundIpsList)" \
+        --arg EGRESS_IP_ID_LIST "$(getPublicOutboundIps id)" \
+        --arg EGRESS_IP_LIST "$(getPublicOutboundIps ipAddress)" \
         '{"EGRESS_IP_ID_LIST":$EGRESS_IP_ID_LIST, "EGRESS_IP_LIST":$EGRESS_IP_LIST}'
 }
 

@@ -88,7 +88,7 @@ resource "azurerm_kubernetes_cluster" "kubernetes_cluster" {
     dynamic "load_balancer_profile" {
       for_each = var.MIGRATION_STRATEGY == "aa" ? [1] : []
       content {
-        outbound_ip_address_ids  = data.external.getPublicOutboundIps.result.EGRESS_IP_ID_LIST
+        outbound_ip_address_ids  = [data.external.getPublicOutboundIps.result.EGRESS_IP_ID_LIST]
         outbound_ports_allocated = 4000
       }
     }
