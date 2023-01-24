@@ -123,7 +123,6 @@ resource "azurerm_kubernetes_cluster_node_pool" "nodepools" {
 }
 
 resource "azurerm_virtual_network" "vnet_cluster" {
-  # Wait on NSG
   depends_on = [
     azurerm_network_security_group.nsg_cluster
   ]
@@ -170,7 +169,6 @@ resource "azurerm_network_security_group" "nsg_cluster" {
     access                  = "Allow"
     protocol                = "Tcp"
     destination_port_ranges = ["80", "443"]
-    # destination_address_prefix = azurerm_public_ip.pip_ingress.ip_address # AT
     destination_address_prefix = var.MIGRATION_STRATEGY == "at" ? azurerm_public_ip.pip_ingress[0].ip_address : data.external.getPublicOutboundIps.result.EGRESS_IP_LIST
     source_port_range          = "*"
     source_address_prefix      = "*"
@@ -179,7 +177,6 @@ resource "azurerm_network_security_group" "nsg_cluster" {
 
 # AT
 resource "azurerm_public_ip" "pip_ingress" {
-  # Check if AT or AA
   count               = var.MIGRATION_STRATEGY == "at" ? 1 : 0
   name                = "pip-radix-ingress-${var.RADIX_ZONE}-${var.RADIX_ENVIRONMENT}-${var.CLUSTER_NAME}"
   resource_group_name = var.AZ_RESOURCE_GROUP_COMMON
