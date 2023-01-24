@@ -13,13 +13,13 @@ variable "AZ_RESOURCE_GROUP_COMMON" {
   type        = string
 }
 
-variable "AZ_RESOURCE_GROUP_VNET_HUB" {
-  description = "Resource group name for vnet hub"
+variable "AZ_SUBSCRIPTION_ID" {
+  description = "Azure subscription id"
   type        = string
 }
 
-variable "CLUSTER_NAME" {
-  description = "The name of the Managed Kubernetes Cluster to create"
+variable "AZ_RESOURCE_GROUP_VNET_HUB" {
+  description = "Resource group name for vnet hub"
   type        = string
 }
 
@@ -64,6 +64,16 @@ variable "AKS_KUBERNETES_VERSION" {
   type        = string
 }
 
+variable "CLUSTER_NAME" {
+  description = "The name of the Managed Kubernetes Cluster to create"
+  type        = string
+}
+
+variable "CLUSTER_TYPE" {
+  description = "cluster type"
+  type        = string
+}
+
 variable "WHITELIST_IPS" {
   description = "value"
   type        = list(string)
@@ -85,6 +95,11 @@ variable "MI_AKS" {
     id        = string
     object_id = string
   }))
+}
+
+variable "MIGRATION_STRATEGY" {
+  description = "The migration strategy to use"
+  type        = string
 }
 
 variable "RADIX_ZONE" {

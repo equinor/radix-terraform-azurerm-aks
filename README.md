@@ -37,6 +37,7 @@ No modules.
 | [random_id.four_byte](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) | resource |
 | [azurerm_virtual_network.hub](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/virtual_network) | data source |
 | [external_external.getAddressSpaceForVNET](https://registry.terraform.io/providers/hashicorp/external/latest/docs/data-sources/external) | data source |
+| [external_external.getPublicOutboundIps](https://registry.terraform.io/providers/hashicorp/external/latest/docs/data-sources/external) | data source |
 
 ## Inputs
 
@@ -52,7 +53,10 @@ No modules.
 | <a name="input_AZ_RESOURCE_GROUP_CLUSTERS"></a> [AZ\_RESOURCE\_GROUP\_CLUSTERS](#input\_AZ\_RESOURCE\_GROUP\_CLUSTERS) | Resource group name for clusters | `string` | n/a | yes |
 | <a name="input_AZ_RESOURCE_GROUP_COMMON"></a> [AZ\_RESOURCE\_GROUP\_COMMON](#input\_AZ\_RESOURCE\_GROUP\_COMMON) | Resource group name for common | `string` | n/a | yes |
 | <a name="input_AZ_RESOURCE_GROUP_VNET_HUB"></a> [AZ\_RESOURCE\_GROUP\_VNET\_HUB](#input\_AZ\_RESOURCE\_GROUP\_VNET\_HUB) | Resource group name for vnet hub | `string` | n/a | yes |
+| <a name="input_AZ_SUBSCRIPTION_ID"></a> [AZ\_SUBSCRIPTION\_ID](#input\_AZ\_SUBSCRIPTION\_ID) | Azure subscription id | `string` | n/a | yes |
 | <a name="input_CLUSTER_NAME"></a> [CLUSTER\_NAME](#input\_CLUSTER\_NAME) | The name of the Managed Kubernetes Cluster to create | `string` | n/a | yes |
+| <a name="input_CLUSTER_TYPE"></a> [CLUSTER\_TYPE](#input\_CLUSTER\_TYPE) | cluster type | `string` | n/a | yes |
+| <a name="input_MIGRATION_STRATEGY"></a> [MIGRATION\_STRATEGY](#input\_MIGRATION\_STRATEGY) | The migration strategy to use | `string` | n/a | yes |
 | <a name="input_MI_AKS"></a> [MI\_AKS](#input\_MI\_AKS) | Manage identity to assign to cluster | <pre>list(object({<br>    client_id = string<br>    id        = string<br>    object_id = string<br>  }))</pre> | n/a | yes |
 | <a name="input_MI_AKSKUBELET"></a> [MI\_AKSKUBELET](#input\_MI\_AKSKUBELET) | Manage identity to assign to cluster | <pre>list(object({<br>    client_id = string<br>    id        = string<br>    object_id = string<br>  }))</pre> | n/a | yes |
 | <a name="input_RADIX_ENVIRONMENT"></a> [RADIX\_ENVIRONMENT](#input\_RADIX\_ENVIRONMENT) | Radix environment | `string` | n/a | yes |
