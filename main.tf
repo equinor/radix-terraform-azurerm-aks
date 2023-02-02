@@ -163,7 +163,7 @@ resource "azurerm_network_security_group" "nsg_cluster" {
   resource_group_name = var.AZ_RESOURCE_GROUP_CLUSTERS
 
   security_rule {
-    name                    = "nsg-${var.CLUSTER_NAME}"
+    name                    = "nsg-${var.CLUSTER_NAME}-rule"
     priority                = "100"
     direction               = "Inbound"
     access                  = "Allow"
