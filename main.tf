@@ -163,12 +163,12 @@ resource "azurerm_network_security_group" "nsg_cluster" {
   resource_group_name = var.AZ_RESOURCE_GROUP_CLUSTERS
 
   security_rule {
-    name                    = "nsg-${var.CLUSTER_NAME}-rule"
-    priority                = "100"
-    direction               = "Inbound"
-    access                  = "Allow"
-    protocol                = "Tcp"
-    destination_port_ranges = ["80", "443"]
+    name                       = "nsg-${var.CLUSTER_NAME}-rule"
+    priority                   = "100"
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    destination_port_ranges    = ["80", "443"]
     destination_address_prefix = var.MIGRATION_STRATEGY == "at" ? azurerm_public_ip.pip_ingress[0].ip_address : data.external.getPublicOutboundIps.result.EGRESS_IP_LIST
     source_port_range          = "*"
     source_address_prefix      = "*"
