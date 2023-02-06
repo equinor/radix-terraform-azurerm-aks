@@ -61,6 +61,7 @@ No modules.
 | <a name="input_MI_AKSKUBELET"></a> [MI\_AKSKUBELET](#input\_MI\_AKSKUBELET) | Manage identity to assign to cluster | <pre>list(object({<br>    client_id = string<br>    id        = string<br>    object_id = string<br>  }))</pre> | n/a | yes |
 | <a name="input_RADIX_ENVIRONMENT"></a> [RADIX\_ENVIRONMENT](#input\_RADIX\_ENVIRONMENT) | Radix environment | `string` | n/a | yes |
 | <a name="input_RADIX_ZONE"></a> [RADIX\_ZONE](#input\_RADIX\_ZONE) | Radix zone | `string` | n/a | yes |
+| <a name="input_TAGS"></a> [TAGS](#input\_TAGS) | tags | `map(string)` | `{}` | no |
 | <a name="input_WHITELIST_IPS"></a> [WHITELIST\_IPS](#input\_WHITELIST\_IPS) | value | `list(string)` | n/a | yes |
 
 ## Outputs
