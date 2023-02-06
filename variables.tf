@@ -111,3 +111,9 @@ variable "RADIX_ENVIRONMENT" {
   description = "Radix environment"
   type        = string
 }
+
+variable "TAGS" {
+  description = "tags"
+  type        = map(string)
+  default     = {}
+}

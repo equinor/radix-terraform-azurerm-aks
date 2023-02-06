@@ -54,6 +54,7 @@ resource "azurerm_kubernetes_cluster" "kubernetes_cluster" {
   sku_tier                        = "Paid"
   api_server_authorized_ip_ranges = length(var.WHITELIST_IPS) != 0 ? var.WHITELIST_IPS : null
   oidc_issuer_enabled             = true
+  tags                            = var.TAGS
 
   azure_active_directory_role_based_access_control {
     managed                = true
@@ -71,7 +72,6 @@ resource "azurerm_kubernetes_cluster" "kubernetes_cluster" {
     vnet_subnet_id               = azurerm_subnet.subnet_cluster.id
     node_labels                  = tomap({ nodepool-type = "system", nodepoolos = "linux", app = "system-apps" })
     only_critical_addons_enabled = true
-
   }
 
   identity {
