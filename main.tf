@@ -24,6 +24,7 @@ data "external" "getAddressSpaceForVNET" {
 }
 
 data "external" "getPublicOutboundIps" {
+  count   = var.MIGRATION_STRATEGY == "aa" ? 1 : 0
   program = ["bash", "${path.module}/scripts/getPublicOutboundIps.sh"]
   query = {
     AZ_LOCATION              = var.AZ_LOCATION
