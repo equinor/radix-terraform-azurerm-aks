@@ -20,13 +20,13 @@ function parse_input() {
     OUTBOUND_IP_COUNT=\(.OUTBOUND_IP_COUNT)
     AZ_IPPRE_OUTBOUND_NAME=\(.AZ_IPPRE_OUTBOUND_NAME)
     "')"
-    if [[ -z "${AZ_LOCATION}" ]]; then export AZ_RESOURCE_GROUP_VNET_HUB=none; fi
-    if [[ -z "${AZ_SUBSCRIPTION_ID}" ]]; then export hub_to_cluster=none; fi
-    if [[ -z "${AZ_RESOURCE_GROUP_COMMON}" ]]; then export AZ_VNET_HUB_NAME=none; fi
-    if [[ -z "${CLUSTER_TYPE}" ]]; then export AZ_VNET_HUB_NAME=none; fi
-    if [[ -z "${MIGRATION_STRATEGY}" ]]; then export AZ_VNET_HUB_NAME=none; fi
-    if [[ -z "${OUTBOUND_IP_COUNT}" ]]; then export AZ_VNET_HUB_NAME=none; fi
-    if [[ -z "${AZ_IPPRE_OUTBOUND_NAME}" ]]; then export AZ_VNET_HUB_NAME=none; fi
+    if [[ -z "${AZ_LOCATION}" ]]; then export AZ_LOCATION=none; fi
+    if [[ -z "${AZ_SUBSCRIPTION_ID}" ]]; then export AZ_SUBSCRIPTION_ID=none; fi
+    if [[ -z "${AZ_RESOURCE_GROUP_COMMON}" ]]; then export AZ_RESOURCE_GROUP_COMMON=none; fi
+    if [[ -z "${CLUSTER_TYPE}" ]]; then export CLUSTER_TYPE=none; fi
+    if [[ -z "${MIGRATION_STRATEGY}" ]]; then export MIGRATION_STRATEGY=none; fi
+    if [[ -z "${OUTBOUND_IP_COUNT}" ]]; then export OUTBOUND_IP_COUNT=none; fi
+    if [[ -z "${AZ_IPPRE_OUTBOUND_NAME}" ]]; then export AZ_IPPRE_OUTBOUND_NAME=none; fi
 }
 
 function getPublicOutboundIps() {
