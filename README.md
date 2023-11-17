@@ -1,5 +1,9 @@
 # Azure Kubernetes Terraform module
 
+# This project has been archived - 2023-11-17
+
+Outdated info, to be used for references
+
 Terraform module which creates Azure Kubernetes resources.
 
 <!-- BEGIN_TF_DOCS -->
